@@ -3,6 +3,7 @@ import './App.css';
 import Header from './components/Header'
 import Posts from './components/Posts'
 import NewPostsModal from './components/NewPostModal'
+import FollowUserModal from './components/FollowUserModal'
 import Gun from 'gun'
 import SEA from 'gun/sea'
 
@@ -26,18 +27,33 @@ class App extends Component {
     this.gunUser.recall({sessionStorage: true})
   }
 
-  handleUserAuthed(ack) {
+  handleUserAuthed = (ack) => {
     console.log("auth event", ack)
     this.gunAppRoot = this.gunUser.get('sovereign')
     window.gunAppRoot = this.gunAppRoot
     this.setState({isAuthenticated: true} )    
   }
 
-  handleUserUpdate(ack){
+  handleCreatePost = (post) => {
+
+    //create new post
+    const created = new Date().getTime()
+    this.gunAppRoot.get('posts').set({
+      text: post.text,
+      created: created,
+      modified: created
+    })
 
   }
 
-  handleProfileUpdate(ack){
+  handleFollowUser = (user) => {
+
+    //follow user
+    this.gunAppRoot.get('followed').set({
+      userId: user.userId,
+      trusted: false,
+      hidden: false
+    })
 
   }
 
@@ -47,7 +63,8 @@ class App extends Component {
       
       <Header/>
       
-      {this.state.isAuthenticated && <NewPostsModal gunAppRoot={this.gunAppRoot}/>}
+      {this.state.isAuthenticated && <FollowUserModal onFollowUser={this.handleFollowUser}/>}
+      {this.state.isAuthenticated && <NewPostsModal onCreatePost={this.handleCreatePost}/>}
       {this.state.isAuthenticated && <Posts gunAppRoot={this.gunAppRoot}/>}
         
       {!this.state.isAuthenticated && (

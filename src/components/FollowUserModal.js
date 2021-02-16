@@ -1,9 +1,9 @@
 import {useState} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 
-const NewPostModal = ({onCreatePost}) => {
+const FollowUserModal = ({onFollowUser}) => {
     const [show, setShow] = useState(false)
-    const [text, setText] = useState('')
+    const [userId, setUserId] = useState('')
   
     const handleClose = () => setShow(false)
     const handleShow = () => setShow(true)
@@ -12,42 +12,42 @@ const NewPostModal = ({onCreatePost}) => {
         e.preventDefault()
         
         //TODO validation
-        if(!text){
-            alert('Please add text for your post')
+        if(!userId){
+            alert('Please provide a user id')
             return
         }
-        console.log('handlesubmit', this)
-        //create post
-        onCreatePost({
-            text: text
+        
+        //follow user
+        onFollowUser({
+            userId: userId
         })
 
         //close the form
         setShow(false)
 
         //reset the form via the state
-        setText('')
+        setUserId('')
 
     } 
   
     return (
         <>
-            <Button variant="primary" onClick={handleShow}>New Post</Button>
+            <Button variant="primary" onClick={handleShow}>Follow User</Button>
 
             <Modal show={show} onHide={handleClose}>
                 <form onSubmit={handleSubmit}>
                 <Modal.Header closeButton>
-                    <Modal.Title>New Post</Modal.Title>
+                    <Modal.Title>Follow User</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form.Group controlId="formBasicEmail">
-                        <Form.Label>Text</Form.Label>
-                        <Form.Control type="text" placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
+                        <Form.Label>User Address</Form.Label>
+                        <Form.Control type="text" placeholder="user's address..." value={userId} onChange={(e) => setUserId(e.target.value)} />
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={handleClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleClose}>Post!</Button>
+                    <Button variant="primary" type="submit" onClick={handleClose}>Follow!</Button>
                 </Modal.Footer>
                 </form>
             </Modal>
@@ -55,4 +55,4 @@ const NewPostModal = ({onCreatePost}) => {
     );
 }
 
-export default NewPostModal
+export default FollowUserModal
