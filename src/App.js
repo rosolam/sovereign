@@ -1,17 +1,22 @@
-import React, { Component } from 'react';
-import './App.css';
+import React, { Component } from 'react'
+import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
+import './App.css'
 import Header from './components/Header'
 import Posts from './components/Posts'
+import Home from './components/Home'
+import Profiles from './components/Profiles'
 import NewPostsModal from './components/NewPostModal'
 import FollowUserModal from './components/FollowUserModal'
+import Login from './components/Login'
 import Gun from 'gun'
 import SEA from 'gun/sea'
+import Settings from './components/Settings'
 
 class App extends Component {
 
   constructor(){
     super()
-    this.gun = Gun()//"http://192.168.1.99:8080/gun")
+    this.gun = Gun("http://192.168.1.99:8080/gun")
     this.gunUser = this.gun.user()
     this.state = {
       isAuthenticated: false
@@ -46,33 +51,46 @@ class App extends Component {
 
   }
 
-  handleFollowUser = (user) => {
+  handleFollowUser = (follow) => {
+
+    //get user referecne
+    const userRef = this.gun.get(follow.soul)
 
     //follow user
-    this.gunAppRoot.get('followed').set({
-      userId: user.userId,
-      trusted: false,
-      hidden: false
-    })
+    this.gunAppRoot.get('following').get(follow.soul).put({trusted: false,mute: false}).get('user').put(userRef);
 
   }
 
   render() {
-    return (
-      <div className="App">
+
+    const homeRoute = () => {
+      return (<div className="app">
+        <Home
+          header={<Header/>}
+          followModal={<FollowUserModal onFollowUser={this.handleFollowUser}/>}
+          newPostModal={<NewPostsModal onCreatePost={this.handleCreatePost}/>}
+          profiles={<Profiles gunAppRoot={this.gunAppRoot}/>}
+          posts={<Posts gunAppRoot={this.gunAppRoot}/>}
+        />
+      </div>)
+    };
+
+    if(!this.state.isAuthenticated){
+      return(
+        <Login/>
+      )
       
-      <Header/>
-      
-      {this.state.isAuthenticated && <FollowUserModal onFollowUser={this.handleFollowUser}/>}
-      {this.state.isAuthenticated && <NewPostsModal onCreatePost={this.handleCreatePost}/>}
-      {this.state.isAuthenticated && <Posts gunAppRoot={this.gunAppRoot}/>}
-        
-      {!this.state.isAuthenticated && (
-        <div>You need to login first</div>
-      )}
-      
-     </div>
-    );
+    }else{
+      return(
+        <BrowserRouter basename='sovereign'>
+          <Switch>
+            <Route path="/" component={homeRoute} exact/>
+            <Route path="/test" component={Settings}/>
+          </Switch>
+        </BrowserRouter>
+      )
+    }
+
   }
 }
 

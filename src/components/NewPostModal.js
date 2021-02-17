@@ -16,7 +16,7 @@ const NewPostModal = ({onCreatePost}) => {
             alert('Please add text for your post')
             return
         }
-        console.log('handlesubmit', this)
+
         //create post
         onCreatePost({
             text: text

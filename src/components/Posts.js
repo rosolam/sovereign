@@ -23,19 +23,22 @@ class Posts extends React.Component{
         //handle updates to the posts of the users I follow
         this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => this.handlePostUpdate(value, key, _msg, _ev))      
 
+        //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
+        //this.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
+
       }
 
     handlePostUpdate(value, key, _msg, _ev){
 
-        //console.log('post update event', value,key)
+        console.log('post update event', value,key)
 
         //check to see if post exists already
         const existingPostIndex = this.state.posts.findIndex(p => p.key === key)
-        //console.log('exsting index', existingPostIndex)
+        console.log('exsting index', existingPostIndex)
         if(existingPostIndex == -1){
 
             //new, add post item to state
-            //console.log('adding post')
+            console.log('adding post')
             const newPost = value
             newPost.key = key
             
