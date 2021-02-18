@@ -40,7 +40,7 @@ const FollowUserModal = ({onFollowUser}) => {
                     <Modal.Title>Follow User</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form.Group controlId="formBasicEmail">
+                    <Form.Group controlId="formUserAddress">
                         <Form.Label>User Address</Form.Label>
                         <Form.Control type="text" placeholder="user's address..." value={soul} onChange={(e) => setSoul(e.target.value)} />
                     </Form.Group>

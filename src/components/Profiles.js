@@ -23,12 +23,18 @@ class Profiles extends React.Component{
 
       }
 
+    componentWillUnmount(){
+
+        console.log('dropping profile event handler')
+
+        this.gunAppRoot.get('profile').map().off()
+        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('profile').map().off()
+
+    }
+
     handleProfileUpdate(value, key, _msg, _ev){
 
         console.log('profile update event', value,key)
-
-        //stop here so we can debug...
-        return;
 
         //check to see if profile exists already
         const existingProfileIndex = this.state.profiles.findIndex(p => p.key === key)
@@ -39,15 +45,9 @@ class Profiles extends React.Component{
             //console.log('adding profile')
             const newProfile = value
             newProfile.key = key
-            
-            //sort the new profile into the array
-            const updatedProfiles = [...this.state.profiles]
-            let insertionIndex = updatedProfiles.findIndex(p => p.lastPost > newProfile.lastPost)
-            if(insertionIndex == -1){ insertionIndex = updatedProfiles.length} //handle adding to end if largest sort
-            updatedProfiles.splice(insertionIndex,0,newProfile)
 
-            //update state
-            this.setState({profiles: updatedProfiles})
+            //sort the new profile into the array
+            this.setState(prevState => ({profiles: [...prevState.profiles,newProfile].sort((a,b) => {return b.created - a.created})}))
 
         } else {
 
@@ -58,10 +58,8 @@ class Profiles extends React.Component{
             if(!value){
 
                 //yes, delete it
-                //console.log('deleting profile')
-                const updatedProfiles = [...this.state.profiles]
-                updatedProfiles.splice(existingProfileIndex,1)
-                this.setState({profiles: updatedProfiles})
+                console.log('deleting profile')
+                this.setState(prevState => ({profiles: prevState.profiles.filter(p => p.key !== key)}))
                 
             } else {
 
@@ -70,17 +68,16 @@ class Profiles extends React.Component{
                 if(value.modified > existingProfile.modified){
 
                     //yes, update it
-                    //console.log('updating profile')
-                    const updatedProfiles = [...this.state.profiles]
+                    console.log('updating profile')
                     const updatedProfile = value
                     updatedProfile.key = key
-                    updatedProfiles[existingProfileIndex] = updatedProfile
-                    this.setState({profiles: updatedProfiles})
+                    this.setState(prevState => ({profiles: [...prevState.profiles.filter(p => p.key !== key),
+                        updatedProfile].sort((a,b) => {return b.created - a.created})}))
 
                 } else {
                     
                     //dupe, ignore this event
-                    //console.log('ignoring profile')
+                    console.log('ignoring profile')
 
                 }
             }

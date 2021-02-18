@@ -12,6 +12,13 @@ import Gun from 'gun'
 import SEA from 'gun/sea'
 import Settings from './components/Settings'
 
+const ApiContext = React.createContext({
+  gun: null,
+  gunUser: null,
+  gunAppRoot: null,
+  ipfs: null
+})
+
 class App extends Component {
 
   constructor(){
@@ -61,6 +68,18 @@ class App extends Component {
 
   }
 
+  handleUpdateProfile = (profile) => {
+
+    console.log("handleupdateprofile")
+
+    //get user referecne
+    //const userRef = this.gun.get(follow.soul)
+
+    //follow user
+    //this.gunAppRoot.get('following').get(follow.soul).put({trusted: false,mute: false}).get('user').put(userRef);
+
+  }
+
   render() {
 
     const homeRoute = () => {
@@ -82,12 +101,18 @@ class App extends Component {
       
     }else{
       return(
+        <ApiContext.Provider value={{
+          gun: this.gun,
+          gunUser: this.gunUser,
+          gunAppRoot: this.gunAppRoot
+        }}>
         <BrowserRouter basename='sovereign'>
           <Switch>
             <Route path="/" component={homeRoute} exact/>
             <Route path="/test" component={Settings}/>
           </Switch>
         </BrowserRouter>
+        </ApiContext.Provider>
       )
     }
 

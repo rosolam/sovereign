@@ -28,28 +28,31 @@ class Posts extends React.Component{
 
       }
 
+    componentWillUnmount(){
+
+        console.log('dropping post event handler')
+
+        this.gunAppRoot.get('posts').map().off()
+        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
+
+    }
+
     handlePostUpdate(value, key, _msg, _ev){
 
         console.log('post update event', value,key)
 
         //check to see if post exists already
         const existingPostIndex = this.state.posts.findIndex(p => p.key === key)
-        console.log('exsting index', existingPostIndex)
+        //console.log('exsting index', existingPostIndex)
         if(existingPostIndex == -1){
 
             //new, add post item to state
-            console.log('adding post')
+            //console.log('adding post')
             const newPost = value
             newPost.key = key
-            
-            //sort the new post into the array
-            const updatedPosts = [...this.state.posts]
-            let insertionIndex = updatedPosts.findIndex(p => p.created > newPost.created)
-            if(insertionIndex == -1){ insertionIndex = updatedPosts.length} //handle adding to end if largest sort
-            updatedPosts.splice(insertionIndex,0,newPost)
 
-            //update state
-            this.setState({posts: updatedPosts})
+            //sort the new post into the array
+            this.setState(prevState => ({posts: [...prevState.posts,newPost].sort((a,b) => {return b.created - a.created})}))
 
         } else {
 
@@ -60,10 +63,8 @@ class Posts extends React.Component{
             if(!value){
 
                 //yes, delete it
-                //console.log('deleting post')
-                const updatedPosts = [...this.state.posts]
-                updatedPosts.splice(existingPostIndex,1)
-                this.setState({posts: updatedPosts})
+                console.log('deleting post')
+                this.setState(prevState => ({posts: prevState.posts.filter(p => p.key !== key)}))
                 
             } else {
 
@@ -72,17 +73,16 @@ class Posts extends React.Component{
                 if(value.modified > existingPost.modified){
 
                     //yes, update it
-                    //console.log('updating post')
-                    const updatedPosts = [...this.state.posts]
+                    console.log('updating post')
                     const updatedPost = value
                     updatedPost.key = key
-                    updatedPosts[existingPostIndex] = updatedPost
-                    this.setState({posts: updatedPosts})
+                    this.setState(prevState => ({posts: [...prevState.posts.filter(p => p.key !== key),
+                        updatedPost].sort((a,b) => {return b.created - a.created})}))
 
                 } else {
                     
                     //dupe, ignore this event
-                    //console.log('ignoring post')
+                    console.log('ignoring post')
 
                 }
             }

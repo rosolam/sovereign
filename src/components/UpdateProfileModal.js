@@ -1,9 +1,10 @@
 import {useState} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 
-const FollowUserModal = ({onFollowUser}) => {
+const FollowUserModal = ({onUpdateProfile, profile}) => {
     const [show, setShow] = useState(false)
-    const [soul, setSoul] = useState('')
+    const [name, setName] = useState(profile.name)
+    const [picture, setPicture] = useState(profile.picture)
   
     const handleClose = () => setShow(false)
     const handleShow = () => setShow(true)
@@ -12,21 +13,19 @@ const FollowUserModal = ({onFollowUser}) => {
         e.preventDefault()
         
         //TODO validation
-        if(!soul){
-            alert('Please provide a user id')
+        if(!name){
+            alert('Please provide a name')
             return
         }
         
         //follow user
-        onFollowUser({
-            soul: soul
+        onUpdateProfile({
+            name: name,
+            picture: picture
         })
 
         //close the form
         setShow(false)
-
-        //reset the form via the state
-        setSoul('')
 
     } 
   
@@ -40,9 +39,13 @@ const FollowUserModal = ({onFollowUser}) => {
                     <Modal.Title>Follow User</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form.Group controlId="formBasicEmail">
-                        <Form.Label>User Address</Form.Label>
-                        <Form.Control type="text" placeholder="user's address..." value={soul} onChange={(e) => setSoul(e.target.value)} />
+                    <Form.Group controlId="formName">
+                        <Form.Label>Name</Form.Label>
+                        <Form.Control type="text" placeholder="your name..." value={name} onChange={(e) => setName(e.target.value)} />
+                    </Form.Group>
+                    <Form.Group controlId="formPicture">
+                        <Form.Label>Picture</Form.Label>
+                        <Form.Control type="text" placeholder="your picture..." value={picture} onChange={(e) => setPicture(e.target.value)} />
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
