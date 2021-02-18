@@ -11,17 +11,11 @@ import Login from './components/Login'
 import Gun from 'gun'
 import SEA from 'gun/sea'
 import Settings from './components/Settings'
-
-const ApiContext = React.createContext({
-  gun: null,
-  gunUser: null,
-  gunAppRoot: null,
-  ipfs: null
-})
+import ApiContext from "./ApiContext"
 
 class App extends Component {
 
-  constructor(){
+   constructor(){
     super()
     this.gun = Gun("http://192.168.1.99:8080/gun")
     this.gunUser = this.gun.user()
@@ -83,15 +77,21 @@ class App extends Component {
   render() {
 
     const homeRoute = () => {
-      return (<div className="app">
-        <Home
-          header={<Header/>}
-          followModal={<FollowUserModal onFollowUser={this.handleFollowUser}/>}
-          newPostModal={<NewPostsModal onCreatePost={this.handleCreatePost}/>}
-          profiles={<Profiles gunAppRoot={this.gunAppRoot}/>}
-          posts={<Posts gunAppRoot={this.gunAppRoot}/>}
-        />
-      </div>)
+      return (
+        <ApiContext.Provider value= {{
+          gun: this.gun,
+          gunUser: this.gunUser,
+          gunAppRoot: this.gunAppRoot
+        }}>
+          <Home
+            header={<Header/>}
+            followModal={<FollowUserModal onFollowUser={this.handleFollowUser}/>}
+            newPostModal={<NewPostsModal onCreatePost={this.handleCreatePost}/>}
+            profiles={<Profiles gunAppRoot={this.gunAppRoot}/>}
+            posts={<Posts/>}
+          />
+        </ApiContext.Provider>
+      )
     };
 
     if(!this.state.isAuthenticated){
@@ -101,18 +101,12 @@ class App extends Component {
       
     }else{
       return(
-        <ApiContext.Provider value={{
-          gun: this.gun,
-          gunUser: this.gunUser,
-          gunAppRoot: this.gunAppRoot
-        }}>
         <BrowserRouter basename='sovereign'>
           <Switch>
             <Route path="/" component={homeRoute} exact/>
             <Route path="/test" component={Settings}/>
           </Switch>
         </BrowserRouter>
-        </ApiContext.Provider>
       )
     }
 

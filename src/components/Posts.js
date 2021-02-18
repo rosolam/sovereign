@@ -1,58 +1,26 @@
+import React, { useState, useEffect, useContext } from 'react'
+import ApiContext from "../ApiContext"
 import Post from './Post'
-import React, { Component } from 'react';
 
-class Posts extends React.Component{
+const Posts = () => {
 
-    constructor(props){
-        super(props);
-        this.gunAppRoot = props.gunAppRoot
-        
-        this.state = { 
-            posts: []
-        }
+    const apiContext = useContext(ApiContext)
+    const [posts, setPosts] = useState([])
 
-    }
-
-    componentDidMount(){
- 
-        console.log('setting post event handler')
-
-        //handle updates to my own posts
-        this.gunAppRoot.get('posts').map().on((value, key, _msg, _ev) => this.handlePostUpdate(value, key, _msg, _ev))
-
-        //handle updates to the posts of the users I follow
-        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => this.handlePostUpdate(value, key, _msg, _ev))      
-
-        //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
-        //this.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
-
-      }
-
-    componentWillUnmount(){
-
-        console.log('dropping post event handler')
-
-        this.gunAppRoot.get('posts').map().off()
-        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
-
-    }
-
-    handlePostUpdate(value, key, _msg, _ev){
-
-        console.log('post update event', value,key)
+    const getNewPostState = (prevState, value, key) => {
 
         //check to see if post exists already
-        const existingPostIndex = this.state.posts.findIndex(p => p.key === key)
-        //console.log('exsting index', existingPostIndex)
-        if(existingPostIndex == -1){
+        const existingPostIndex = prevState.findIndex(p => p.key === key)
+        console.log('exsting index', existingPostIndex)
+        if (existingPostIndex == -1) {
 
             //new, add post item to state
-            //console.log('adding post')
+            console.log('adding post')
             const newPost = value
             newPost.key = key
 
             //sort the new post into the array
-            this.setState(prevState => ({posts: [...prevState.posts,newPost].sort((a,b) => {return b.created - a.created})}))
+            return [...prevState, newPost].sort((a, b) => { return b.created - a.created })
 
         } else {
 
@@ -60,29 +28,29 @@ class Posts extends React.Component{
             //console.log('existing post')
 
             //is this an update to delete it?
-            if(!value){
+            if (!value) {
 
                 //yes, delete it
                 console.log('deleting post')
-                this.setState(prevState => ({posts: prevState.posts.filter(p => p.key !== key)}))
-                
+                return prevState.filter(p => p.key !== key)
+
             } else {
 
                 //No, has it changed?
-                const existingPost = this.state.posts[existingPostIndex]
-                if(value.modified > existingPost.modified){
+                const existingPost = prevState[existingPostIndex]
+                if (value.modified > existingPost.modified) {
 
                     //yes, update it
                     console.log('updating post')
                     const updatedPost = value
                     updatedPost.key = key
-                    this.setState(prevState => ({posts: [...prevState.posts.filter(p => p.key !== key),
-                        updatedPost].sort((a,b) => {return b.created - a.created})}))
+                    return ([...prevState.filter(p => p.key !== key),updatedPost].sort((a, b) => { return b.created - a.created }))
 
                 } else {
-                    
+
                     //dupe, ignore this event
                     console.log('ignoring post')
+                    return prevState
 
                 }
             }
@@ -90,16 +58,47 @@ class Posts extends React.Component{
         }
 
     }
-    
-    render() {
-        return (
-            <div>
-                {this.state.posts.map((post) => (
-                    <Post post={post} key={post.key}/>
-                ))}
-            </div>
-        );
+
+    const handlePostUpdate = (value, key, _msg, _ev) => {
+
+        console.log('post update event', value, key)
+        setPosts(prevState => getNewPostState(prevState, value, key))
+
     }
-} 
+
+    useEffect(() => {
+
+        console.log('setting post event handler')
+
+        //handle updates to my own posts
+        apiContext.gunAppRoot.get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+
+        //handle updates to the posts of the users I follow
+        apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+
+        //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
+        //context.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
+
+        return () => {
+
+            console.log('dropping post event handler')
+
+            apiContext.gunAppRoot.get('posts').map().off()
+            apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
+
+        };
+
+    }, []);
+
+    return (
+        <div>
+            <div>{apiContext.test}</div>
+            {posts.map((post) => (
+                <Post post={post} key={post.key} />
+            ))}
+        </div>
+    );
+
+}
 
 export default Posts
