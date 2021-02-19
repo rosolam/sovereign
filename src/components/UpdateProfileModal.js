@@ -1,13 +1,15 @@
-import {useState} from 'react'
+import {useState, useEffect} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
+import {UpdateProfile, GetProfile} from '../api/BusinessLogic'
 
-const FollowUserModal = ({onUpdateProfile, profile}) => {
+const UpdateProfileModal = () => {
     const [show, setShow] = useState(false)
     const [name, setName] = useState(profile.name)
     const [picture, setPicture] = useState(profile.picture)
   
     const handleClose = () => setShow(false)
     const handleShow = () => setShow(true)
+
     const handleSubmit = (e) => {
         
         e.preventDefault()
@@ -19,7 +21,7 @@ const FollowUserModal = ({onUpdateProfile, profile}) => {
         }
         
         //follow user
-        onUpdateProfile({
+        UpdateProfile({
             name: name,
             picture: picture
         })
@@ -29,6 +31,15 @@ const FollowUserModal = ({onUpdateProfile, profile}) => {
 
     } 
   
+    const loadProfile = (profile) => {
+        setName(profile.name)
+        setPicture(profile.picture)
+    }
+
+    useEffect(() => {
+        GetProfile(loadProfile)
+    }, [])
+
     return (
         <>
             <Button variant="primary" onClick={handleShow}>Follow User</Button>

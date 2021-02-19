@@ -1,7 +1,8 @@
 import {useState} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
+import {FollowUser} from '../api/BusinessLogic'
 
-const FollowUserModal = ({onFollowUser}) => {
+const FollowUserModal = () => {
     const [show, setShow] = useState(false)
     const [soul, setSoul] = useState('')
   
@@ -18,7 +19,7 @@ const FollowUserModal = ({onFollowUser}) => {
         }
         
         //follow user
-        onFollowUser({
+        FollowUser({
             soul: soul
         })
 

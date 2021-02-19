@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react'
-import ApiContext from "../ApiContext"
+import ApiContext from "../api/ApiContext"
 import Post from './Post'
 
-const Posts = () => {
+const Posts = ({singleUser}) => {
 
     const apiContext = useContext(ApiContext)
     const [posts, setPosts] = useState([])
@@ -70,21 +70,34 @@ const Posts = () => {
 
         console.log('setting post event handler')
 
-        //handle updates to my own posts
-        apiContext.gunAppRoot.get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+        if(singleUser){
+            
+            //handle updates for a single user
+            apiContext.gun.get(singleUser).get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
 
-        //handle updates to the posts of the users I follow
-        apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+        }else{
 
-        //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
-        //context.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
+            //handle updates to my own posts
+            apiContext.gunAppRoot.get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+
+            //handle updates to the posts of the users I follow
+            apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+
+            //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
+            //context.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
+
+        }
 
         return () => {
 
             console.log('dropping post event handler')
 
-            apiContext.gunAppRoot.get('posts').map().off()
-            apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
+            if(singleUser){
+                apiContext.gun.get(singleUser).get('sovereign').get('posts').map().off()
+            }else{
+                apiContext.gunAppRoot.get('posts').map().off()
+                apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
+            }
 
         };
 

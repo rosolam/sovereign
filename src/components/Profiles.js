@@ -1,53 +1,26 @@
+import React, { useState, useEffect, useContext } from 'react'
+import ApiContext from "../api/ApiContext"
 import Profile from './Profile'
-import React, { Component } from 'react';
 
-class Profiles extends React.Component{
+const Profiles = () => {
 
-    constructor(props){
-        super(props);
-        this.gunAppRoot = props.gunAppRoot
-        
-        this.state = { 
-            profiles: []
-        }
+    const apiContext = useContext(ApiContext)
+    const [profiles, setProfiles] = useState([])
 
-    }
-
-    componentDidMount(){
- 
-        //handle updates to my own profile
-        this.gunAppRoot.get('profile').on((value, key, _msg, _ev) => this.handleProfileUpdate(value, key, _msg, _ev))
-
-        //handle updates to the profiles of the users I follow
-        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('profile').on((value, key, _msg, _ev) => this.handleProfileUpdate(value, key, _msg, _ev))      
-
-      }
-
-    componentWillUnmount(){
-
-        console.log('dropping profile event handler')
-
-        this.gunAppRoot.get('profile').map().off()
-        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('profile').map().off()
-
-    }
-
-    handleProfileUpdate(value, key, _msg, _ev){
-
-        console.log('profile update event', value,key)
+    const getNewProfileState = (prevState, value, key) => {
 
         //check to see if profile exists already
-        const existingProfileIndex = this.state.profiles.findIndex(p => p.key === key)
-        //console.log('exsting index', existingProfileIndex)
-        if(existingProfileIndex == -1){
+        const existingProfileIndex = prevState.findIndex(p => p.key === key)
+        console.log('exsting index', existingProfileIndex)
+        if (existingProfileIndex == -1) {
 
             //new, add profile item to state
-            //console.log('adding profile')
+            console.log('adding profile')
             const newProfile = value
             newProfile.key = key
 
             //sort the new profile into the array
-            this.setState(prevState => ({profiles: [...prevState.profiles,newProfile].sort((a,b) => {return b.created - a.created})}))
+            return [...prevState, newProfile].sort((a, b) => { return b.created - a.created })
 
         } else {
 
@@ -55,29 +28,29 @@ class Profiles extends React.Component{
             //console.log('existing profile')
 
             //is this an update to delete it?
-            if(!value){
+            if (!value) {
 
                 //yes, delete it
                 console.log('deleting profile')
-                this.setState(prevState => ({profiles: prevState.profiles.filter(p => p.key !== key)}))
-                
+                return prevState.filter(p => p.key !== key)
+
             } else {
 
                 //No, has it changed?
-                const existingProfile = this.state.profiles[existingProfileIndex]
-                if(value.modified > existingProfile.modified){
+                const existingProfile = prevState[existingProfileIndex]
+                if (value.modified > existingProfile.modified) {
 
                     //yes, update it
                     console.log('updating profile')
                     const updatedProfile = value
                     updatedProfile.key = key
-                    this.setState(prevState => ({profiles: [...prevState.profiles.filter(p => p.key !== key),
-                        updatedProfile].sort((a,b) => {return b.created - a.created})}))
+                    return ([...prevState.filter(p => p.key !== key),updatedProfile].sort((a, b) => { return b.created - a.created }))
 
                 } else {
-                    
+
                     //dupe, ignore this event
                     console.log('ignoring profile')
+                    return prevState
 
                 }
             }
@@ -85,16 +58,39 @@ class Profiles extends React.Component{
         }
 
     }
-    
-    render() {
-        return (
-            <div>
-                {this.state.profiles.map((profile) => (
-                    <Profile profile={profile} key={profile.key}/>
-                ))}
-            </div>
-        );
+
+    const handleProfileUpdate = (value, key, _msg, _ev) => {
+
+        console.log('profile update event', value, key)
+        setProfiles(prevState => getNewProfileState(prevState, value, key))
+
     }
-} 
+
+    useEffect(() => {
+
+        console.log('setting profile event handler')
+
+        //handle updates to the profiles of the users I follow
+        apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('profile').on((value, key, _msg, _ev) => handleProfileUpdate(value, key, _msg, _ev))
+
+        return () => {
+
+            console.log('dropping profile event handler')
+            apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('profile').off()
+
+        };
+
+    }, []);
+
+    return (
+        <div>
+            <div>{apiContext.test}</div>
+            {profiles.map((profile) => (
+                <Profile profile={profile} key={profile.key} />
+            ))}
+        </div>
+    );
+
+}
 
 export default Profiles

@@ -1,17 +1,12 @@
 import React, { Component } from 'react'
 import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
 import './App.css'
-import Header from './components/Header'
-import Posts from './components/Posts'
-import Home from './components/Home'
-import Profiles from './components/Profiles'
-import NewPostsModal from './components/NewPostModal'
-import FollowUserModal from './components/FollowUserModal'
-import Login from './components/Login'
+import Home from './pages/Home'
+import Login from './pages/Login'
 import Gun from 'gun'
 import SEA from 'gun/sea'
-import Settings from './components/Settings'
-import ApiContext from "./ApiContext"
+import Settings from './pages/Settings'
+import ApiContext from "./api/ApiContext"
 
 class App extends Component {
 
@@ -40,59 +35,7 @@ class App extends Component {
     this.setState({isAuthenticated: true} )    
   }
 
-  handleCreatePost = (post) => {
-
-    //create new post
-    const created = new Date().getTime()
-    this.gunAppRoot.get('posts').set({
-      text: post.text,
-      created: created,
-      modified: created
-    })
-
-  }
-
-  handleFollowUser = (follow) => {
-
-    //get user referecne
-    const userRef = this.gun.get(follow.soul)
-
-    //follow user
-    this.gunAppRoot.get('following').get(follow.soul).put({trusted: false,mute: false}).get('user').put(userRef);
-
-  }
-
-  handleUpdateProfile = (profile) => {
-
-    console.log("handleupdateprofile")
-
-    //get user referecne
-    //const userRef = this.gun.get(follow.soul)
-
-    //follow user
-    //this.gunAppRoot.get('following').get(follow.soul).put({trusted: false,mute: false}).get('user').put(userRef);
-
-  }
-
   render() {
-
-    const homeRoute = () => {
-      return (
-        <ApiContext.Provider value= {{
-          gun: this.gun,
-          gunUser: this.gunUser,
-          gunAppRoot: this.gunAppRoot
-        }}>
-          <Home
-            header={<Header/>}
-            followModal={<FollowUserModal onFollowUser={this.handleFollowUser}/>}
-            newPostModal={<NewPostsModal onCreatePost={this.handleCreatePost}/>}
-            profiles={<Profiles gunAppRoot={this.gunAppRoot}/>}
-            posts={<Posts/>}
-          />
-        </ApiContext.Provider>
-      )
-    };
 
     if(!this.state.isAuthenticated){
       return(
@@ -101,12 +44,21 @@ class App extends Component {
       
     }else{
       return(
+        <ApiContext.Provider value= {{
+          gun: this.gun,
+          gunUser: this.gunUser,
+          gunAppRoot: this.gunAppRoot
+        }}>
         <BrowserRouter basename='sovereign'>
           <Switch>
-            <Route path="/" component={homeRoute} exact/>
+            <Route path="/" exact>
+              {this.state.isAuthenticated ? <Home/> : <Redirect to='/login'/>}
+            </Route>
             <Route path="/test" component={Settings}/>
+            <Route path="/login" component={Login}/>
           </Switch>
         </BrowserRouter>
+        </ApiContext.Provider>
       )
     }
 
