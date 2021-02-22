@@ -1,7 +1,11 @@
-import {useState} from 'react'
+import {useState, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
+import ApiContext from '../api/ApiContext'
 
-const NewPostModal = ({onCreatePost}) => {
+const NewPostModal = () => {
+
+    const apiContext = useContext(ApiContext)
+
     const [show, setShow] = useState(false)
     const [text, setText] = useState('')
   
@@ -18,7 +22,7 @@ const NewPostModal = ({onCreatePost}) => {
         }
 
         //create post
-        onCreatePost({
+        apiContext.businessLogic.createPost({
             text: text
         })
 

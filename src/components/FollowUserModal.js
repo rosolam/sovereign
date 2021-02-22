@@ -1,13 +1,16 @@
-import {useState} from 'react'
+import {useState, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
-import {FollowUser} from '../api/BusinessLogic'
+import ApiContext from '../api/ApiContext'
 
 const FollowUserModal = () => {
+    
+    const apiContext = useContext(ApiContext)
     const [show, setShow] = useState(false)
     const [soul, setSoul] = useState('')
   
     const handleClose = () => setShow(false)
     const handleShow = () => setShow(true)
+    
     const handleSubmit = (e) => {
         
         e.preventDefault()
@@ -18,11 +21,12 @@ const FollowUserModal = () => {
             return
         }
         
+        //get user referecne
+        const userRef = apiContext.gun.get(soul)
+    
         //follow user
-        FollowUser({
-            soul: soul
-        })
-
+        apiContext.gunAppRoot.get('following').get(soul).put({ trusted: false, mute: false }).get('user').put(userRef);
+    
         //close the form
         setShow(false)
 

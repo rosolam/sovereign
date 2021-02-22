@@ -11,11 +11,12 @@ const Posts = ({singleUser}) => {
 
         //check to see if post exists already
         const existingPostIndex = prevState.findIndex(p => p.key === key)
-        console.log('exsting index', existingPostIndex)
-        if (existingPostIndex == -1) {
+        //console.log('exsting index', existingPostIndex)
+        if (existingPostIndex == -1 && value) {
 
             //new, add post item to state
-            console.log('adding post')
+            //console.log('adding post')
+            console.log('new post', value,key)
             const newPost = value
             newPost.key = key
 
@@ -61,7 +62,7 @@ const Posts = ({singleUser}) => {
 
     const handlePostUpdate = (value, key, _msg, _ev) => {
 
-        console.log('post update event', value, key)
+        //console.log('post update event', value, key)
         setPosts(prevState => getNewPostState(prevState, value, key))
 
     }
@@ -104,11 +105,12 @@ const Posts = ({singleUser}) => {
     }, []);
 
     return (
-        <div>
-            <div>{apiContext.test}</div>
-            {posts.map((post) => (
-                <Post post={post} key={post.key} />
-            ))}
+        <div className="scrolling-wrapper">
+            <div className="scrolling-content">
+                {posts.map((post) => (
+                    <Post soul={post['_']['#']} key={post.key} isSingleUser={singleUser} />
+                ))}
+            </div>
         </div>
     );
 

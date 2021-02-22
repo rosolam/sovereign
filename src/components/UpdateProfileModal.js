@@ -1,11 +1,14 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
-import {UpdateProfile, GetProfile} from '../api/BusinessLogic'
+import ApiContext from '../api/ApiContext'
 
 const UpdateProfileModal = () => {
+    
+    const apiContext = useContext(ApiContext)
+    
     const [show, setShow] = useState(false)
-    const [name, setName] = useState(profile.name)
-    const [picture, setPicture] = useState(profile.picture)
+    const [name, setName] = useState('')
+    const [picture, setPicture] = useState('')
   
     const handleClose = () => setShow(false)
     const handleShow = () => setShow(true)
@@ -21,7 +24,7 @@ const UpdateProfileModal = () => {
         }
         
         //follow user
-        UpdateProfile({
+        apiContext.businessLogic.updateProfile({
             name: name,
             picture: picture
         })
@@ -32,22 +35,22 @@ const UpdateProfileModal = () => {
     } 
   
     const loadProfile = (profile) => {
-        setName(profile.name)
-        setPicture(profile.picture)
+        setName(profile ? profile.name : '')
+        setPicture(profile ? profile.name : '')
     }
 
     useEffect(() => {
-        GetProfile(loadProfile)
+        apiContext.businessLogic.getProfile(null, loadProfile)
     }, [])
 
     return (
         <>
-            <Button variant="primary" onClick={handleShow}>Follow User</Button>
+            <Button variant="primary" onClick={handleShow}>Update Profile</Button>
 
             <Modal show={show} onHide={handleClose}>
                 <form onSubmit={handleSubmit}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Follow User</Modal.Title>
+                    <Modal.Title>Update Profile</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form.Group controlId="formName">
@@ -69,4 +72,4 @@ const UpdateProfileModal = () => {
     );
 }
 
-export default FollowUserModal
+export default UpdateProfileModal

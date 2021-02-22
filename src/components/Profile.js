@@ -1,10 +1,9 @@
-const Profile = ({profile}) => {
+const Profile = ({soul, profile}) => {
    
     return (
         <div>
-            profile key: {profile.key}
-            profile picture: {profile.picture}
-            profile name: {profile.name}
+            test
+            
         </div>
     )
 }

@@ -5,19 +5,15 @@ import NewPostModal from '../components/NewPostModal'
 import Profiles from '../components/Profiles'
 import Posts from '../components/Posts'
 
-const Home = (props) => {
+const SingleFeed = ({singleUser}) => {
 
     return (
-    
-        <div>
-            <Link to="/test">test</Link>
-            <Header/>
-            <FollowUserModal/>
-            <NewPostModal/>
-            <Profiles/>
-            <Posts/>
-        </div>
+        <>
+        <Header/>
+        <NewPostModal/>
+        <Posts singleUser={singleUser} />
+        </>
     )
 }
 
-export default Home
+export default SingleFeed
