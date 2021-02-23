@@ -2,104 +2,25 @@ import React, { useState, useEffect, useContext } from 'react'
 import ApiContext from "../api/ApiContext"
 import Post from './Post'
 
-const Posts = ({singleUser}) => {
+const Posts = () => {
 
     const apiContext = useContext(ApiContext)
     const [posts, setPosts] = useState([])
 
-    const getNewPostState = (prevState, value, key) => {
-
-        //check to see if post exists already
-        const existingPostIndex = prevState.findIndex(p => p.key === key)
-        //console.log('exsting index', existingPostIndex)
-        if (existingPostIndex == -1 && value) {
-
-            //new, add post item to state
-            //console.log('adding post')
-            console.log('new post', value,key)
-            const newPost = value
-            newPost.key = key
-
-            //sort the new post into the array
-            return [...prevState, newPost].sort((a, b) => { return b.created - a.created })
-
-        } else {
-
-            //yes, a post with this id exists...
-            //console.log('existing post')
-
-            //is this an update to delete it?
-            if (!value) {
-
-                //yes, delete it
-                console.log('deleting post')
-                return prevState.filter(p => p.key !== key)
-
-            } else {
-
-                //No, has it changed?
-                const existingPost = prevState[existingPostIndex]
-                if (value.modified > existingPost.modified) {
-
-                    //yes, update it
-                    console.log('updating post')
-                    const updatedPost = value
-                    updatedPost.key = key
-                    return ([...prevState.filter(p => p.key !== key),updatedPost].sort((a, b) => { return b.created - a.created }))
-
-                } else {
-
-                    //dupe, ignore this event
-                    console.log('ignoring post')
-                    return prevState
-
-                }
-            }
-
-        }
-
-    }
-
-    const handlePostUpdate = (value, key, _msg, _ev) => {
-
-        //console.log('post update event', value, key)
-        setPosts(prevState => getNewPostState(prevState, value, key))
-
-    }
+    let eventUnSubs
 
     useEffect(() => {
 
         console.log('setting post event handler')
-
-        if(singleUser){
-            
-            //handle updates for a single user
-            apiContext.gun.get(singleUser).get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
-
-        }else{
-
-            //handle updates to my own posts
-            apiContext.gunAppRoot.get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
-
-            //handle updates to the posts of the users I follow
-            apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
-
-            //TODO: handle if my profile image changes... let changes to those I am following get refreshed on reloads
-            //context.gunAppRoot.get('profile').get('picture').on((value, key, _msg, _ev) => this.handlePictureUpdate(value, key, _msg, _ev))
-
-        }
-
+        apiContext.businessLogic.subscribePosts(setPosts, eventUnSubs)
+  
         return () => {
 
             console.log('dropping post event handler')
-
-            if(singleUser){
-                apiContext.gun.get(singleUser).get('sovereign').get('posts').map().off()
-            }else{
-                apiContext.gunAppRoot.get('posts').map().off()
-                apiContext.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().off()
+            if(eventUnSubs){
+                eventUnSubs.forEach(u => u.off())
             }
-
+           
         };
 
     }, []);
@@ -108,7 +29,7 @@ const Posts = ({singleUser}) => {
         <div className="scrolling-wrapper">
             <div className="scrolling-content">
                 {posts.map((post) => (
-                    <Post soul={post['_']['#']} key={post.key} isSingleUser={singleUser} />
+                    <Post soul={post['_']['#']} key={post.key}/>
                 ))}
             </div>
         </div>

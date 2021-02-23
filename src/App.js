@@ -10,6 +10,7 @@ import ApiContext from "./api/ApiContext"
 import SingleProfile from './pages/SingleProfile'
 import FollowingProfile from './pages/FollowingProfiles'
 import FollowingFeed from './pages/FollowingFeed'
+import SplitScreen from './pages/SplitScreen'
 import BusinessLogic from './api/BusinessLogic'
 
 class App extends Component {
@@ -64,6 +65,7 @@ class App extends Component {
             <Route path="/singleProfile/:id" component={SingleProfile}/>
             <Route path="/followingFeed" component={FollowingFeed}/>
             <Route path="/followingProfiles" component={FollowingProfile}/>
+            <Route path="/splitScreen" component={SplitScreen}/>
             <Route path="/settings" component={Settings}/>
             <Route path="/login" component={Login}/>
           </Switch>

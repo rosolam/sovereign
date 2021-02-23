@@ -24,3 +24,7 @@
   max-height:50vh;
   overflow: auto;
 }
+
+.split-left{
+  min-width: 400px;
+}

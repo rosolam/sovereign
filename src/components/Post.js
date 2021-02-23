@@ -1,6 +1,6 @@
 import missingProfileImage from '../media/missing-profile-picture.png'
-import {Dropdown, Carousel} from 'react-bootstrap'
-import { useState, useEffect,useContext} from 'react'
+import { Dropdown, Carousel } from 'react-bootstrap'
+import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
 
 const Post = ({soul, isSingleUser}) => {
@@ -11,13 +11,26 @@ const Post = ({soul, isSingleUser}) => {
     const [attachments, setAttachments] = useState([])
     const [profile, setProfile] = useState({name:'loading...', picture:null})
 
+    let eventUnSubs
+
     useEffect(() => {
 
-        console.log('calling for data from inside post ', soul)
-        apiContext.businessLogic.getPost(soul,
+        console.log('setting post event handler')
+        apiContext.businessLogic.subscribePost(
+            soul,
             setPostRoot,
             setAttachments, 
-            setProfile)
+            setProfile
+        )
+        
+        return () => {
+
+            console.log('dropping post event handler')
+            if(eventUnSubs){
+                eventUnSubs.forEach(u => u.off())
+            }
+        
+        };
 
     }, [])
 
@@ -72,8 +85,6 @@ const Post = ({soul, isSingleUser}) => {
         }
 
     }
-
-    console.log('rendering post ', soul)
 
     return (
 

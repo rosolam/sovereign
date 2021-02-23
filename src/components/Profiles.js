@@ -7,17 +7,19 @@ const Profiles = () => {
 
     const apiContext = useContext(ApiContext)
     const [profiles, setProfiles] = useState([])
-    let profilesUnSub
+    let eventUnSubs
 
     useEffect(() => {
 
         console.log('setting profile event handler')
-        apiContext.businessLogic.subscribeProfiles(setProfiles, profilesUnSub)
+        apiContext.businessLogic.subscribeProfiles(setProfiles, eventUnSubs)
   
         return () => {
 
-            console.log('dropping profile event handler', profilesUnSub)
-            if(profilesUnSub){profilesUnSub.off()}
+            console.log('dropping profile event handler')
+            if(eventUnSubs){
+                eventUnSubs.forEach(u => u.off())
+            }
            
         };
 
@@ -27,7 +29,7 @@ const Profiles = () => {
         <div className="scrolling-wrapper">
             <div className="scrolling-content">
                 {profiles.map((profile) => (
-                    <Profile soul={profile['_']['#']} profile={profile} key={profile.key} />
+                    <Profile soul={profile.key + '/sovereign/profile'} key={profile.key} />
                 ))}
             </div>
         </div>
