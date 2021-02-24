@@ -29,7 +29,7 @@ const Profiles = () => {
         <div className="scrolling-wrapper">
             <div className="scrolling-content">
                 {profiles.map((profile) => (
-                    <Profile soul={profile.key + '/sovereign/profile'} key={profile.key} />
+                    <Profile soul={profile.key} key={profile.key} />
                 ))}
             </div>
         </div>

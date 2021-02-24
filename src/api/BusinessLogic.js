@@ -7,29 +7,60 @@ class BusinessLogic {
     gun;
     gunUser;
     gunAppRoot;
+    mySoul;
+    #eventUnSubs = [];
 
     constructor(peer){
+        
         this.gun = Gun(peer ? peer : "http://192.168.1.99:8080/gun")
+        
         this.gunUser = this.gun.user()
+        
         console.log('constructed')
+
     }
     
     dispose(){
-        //todo
+        this.#eventUnSubs.forEach(u => u.off())
     }
 
-    login(user, password, recall, setLoggedIn){
+    createUser(user, password, name){
 
-        console.log('login request')
+        console.log('create user request')
 
-        //ready call back for login
+        //create
+        this.gunUser.create(user, password, (ack) => {
+
+            this.gunAppRoot.get('profile').put({
+                name: name,
+                picture: '',
+                following: '',
+                posts: ''
+            })
+
+        })
+
+    }
+
+    subscribeLogin(setLoggedIn, unSubs){
+
+        unSubs = unSubs ? unSubs : []
         this.gun.on('auth', async (ack) => {
-            console.log('users authed', ack)
+            
+            console.log('login event', ack)
             this.isLoggedIn = true
             this.gunAppRoot = this.gunUser.get('sovereign')
-            //console.log('gunAppRoot', await this.gunAppRoot.then())
+            this.mySoul = this.gunUser['_'].soul
+            //if(!unSubs.includes(_ev)){unSubs.push(_ev)}
             setLoggedIn(true)
+
         })
+        
+    }
+
+    login(user, password, recall){
+
+        console.log('login request')
         
         //recall
         if(recall){
@@ -249,22 +280,41 @@ class BusinessLogic {
         
     }
 
-    async subscribePosts(setPosts, unSubs, options){
-            
-        //handle updates for a single user
-        //apiContext.gun.get(singleUser).get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
+    async subscribePosts(setPosts, soul, unSubs){
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
 
-        //handle updates to the posts of the users I follow
-        this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
-            (value, key, _msg, _ev) =>  {
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
-            }
-        )                
+        //single user or following (plus self)?
+        if(soul){
 
+            //handle updates to the posts of a single users
+            this.gun.get(soul).get('sovereign').get('posts').map().on(
+                (value, key, _msg, _ev) =>  {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                }
+            )  
+
+        }else{
+
+            //handle my own posts
+            this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
+                (value, key, _msg, _ev) =>  {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                }
+            )       
+            
+            //handle updates to the posts of the users I follow
+            this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
+                (value, key, _msg, _ev) =>  {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                }
+            )                
+
+        }
     }
 
     async subscribeProfiles(setProfiles, unSubs){
@@ -293,30 +343,36 @@ class BusinessLogic {
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
-
+        
         //get profile
-        this.gun.get(soul).on(
-            (value, key, _msg, _ev) => {
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setProfile(value)
-            }
-        )
+        if(setProfile){
+            this.gun.get(soul).get('sovereign').get('profile').on(
+                (value, key, _msg, _ev) => {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setProfile(value)
+                }
+            )
+        }
 
         //get following
-        this.gunAppRoot.get('following').get(this.parseUserFromSoul(soul)).on(
-            (value, key, _msg, _ev) => {
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setFollowing(value)
-            }
-        )   
+        if(setFollowing){
+            this.gunAppRoot.get('following').get(soul).on(
+                (value, key, _msg, _ev) => {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setFollowing(value) 
+                }
+            )   
+        }
 
         //get last post
-        this.gun.get(soul).get('lastPost').on(
-            (value, key, _msg, _ev) => {
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setLastPost(value)
-            }
-        )
+        if(setLastPost){
+            this.gun.get(soul).get('sovereign').get('profile').get('lastPost').on(
+                (value, key, _msg, _ev) => {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setLastPost(value)
+                }
+            )
+        }
 
     }
 

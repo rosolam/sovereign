@@ -3,7 +3,7 @@ import { Dropdown, Carousel } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
 
-const Post = ({soul, isSingleUser}) => {
+const Post = ({soul}) => {
     
     const apiContext = useContext(ApiContext)
 
@@ -34,22 +34,11 @@ const Post = ({soul, isSingleUser}) => {
 
     }, [])
 
-    function LargeProfileHeader(){
+    function ProfileHeader(){
         return (
             <div className="d-flex">
                 <div><img className="m-1 rounded-corners" height="40" width="40" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
                 <div className="align-self-center" style={{'font-weight':700, 'font-size':'20px'}}>{profile ? profile.name : 'loading...'}</div>
-            </div>
-        );
-    }
-
-    function SmallProfileHeader(){
-        return (
-            <div className="d-flex">
-                <div><img className="m-3 rounded" height="25" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
-                <div className="align-self-center">
-                    <h6>{profile ? profile.name : 'loading...'}</h6>
-                </div>
             </div>
         );
     }
@@ -88,7 +77,7 @@ const Post = ({soul, isSingleUser}) => {
 
             <div className="border post m-3 d-flex flex-column justify-content-start bg-light rounded-corners">
         
-                {isSingleUser ? <SmallProfileHeader/> : <LargeProfileHeader/>}
+                {!soul && <ProfileHeader/>}
         
                 <div className="d-flex m-1">
                     <div className="flex-grow-1" style={{'max-height':'50vh', overflow: 'auto','font-weight':700, 'font-size':'20px'}}>{postRoot.text}</div>

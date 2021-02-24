@@ -4,11 +4,15 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ApiContext from "./api/ApiContext"
+import BusinessLogic from './api/BusinessLogic'
 
 ReactDOM.render(
   <React.StrictMode>
     <div className="screen-wrapper">
+    <ApiContext.Provider value={{businessLogic: new BusinessLogic()}}>
     <App />
+    </ApiContext.Provider>
     </div>
   </React.StrictMode>,
   document.getElementById('root')

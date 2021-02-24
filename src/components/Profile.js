@@ -1,6 +1,6 @@
 import missingProfileImage from '../media/missing-profile-picture.png'
 import {Dropdown} from 'react-bootstrap'
-import {useHistory} from 'react-router-dom';
+import {useHistory, useParams} from 'react-router-dom';
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
 
@@ -8,7 +8,7 @@ import ApiContext from '../api/ApiContext'
 const Profile = ({soul}) => {
    
     const apiContext = useContext(ApiContext)
-
+    let { id } = useParams();
     const [profile, setProfile] = useState({name:'loading...', picture:''})
     const [following, setFollowing] = useState({unfollowed: true, trusted: false, mute: false})
     const [lastPost, setLastPost] = useState()
@@ -59,12 +59,12 @@ const Profile = ({soul}) => {
 
     const onProfileClick = (e) => { 
         e.preventDefault()
-        history.push('/followingFeed/' + apiContext.businessLogic.parseUserFromSoul(soul));
+        history.push('/Feed/' + soul);
     }
 
     return (
         <div className="profile d-flex" onClick={onProfileClick}>
-            <img className="m-1 rounded" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
+            <img className="m-1 circle-image" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
             <div className="d-flex flex-column flex-grow-1">
                 <div className="d-flex flex-fill">
                     <div style={{fontWeight:700, fontSize:'20px'}}>{profile.name}</div>

@@ -1,51 +1,44 @@
-import React, { useState, useEffect} from 'react'
+import React, { useState, useEffect, useContext} from 'react'
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom'
-import './App.css'
-import SingleFeed from './pages/SingleFeed'
-import Login from './pages/Login'
-import Settings from './pages/Settings'
-import SingleProfile from './pages/SingleProfile'
-import FollowingProfile from './pages/FollowingProfiles'
-import FollowingFeed from './pages/FollowingFeed'
-import SplitScreen from './pages/SplitScreen'
-import BusinessLogic from './api/BusinessLogic'
 import ApiContext from "./api/ApiContext"
+import './App.css'
+import Login from './pages/Login'
+import Following from './pages/Following'
+import Feed from './pages/Feed'
+
 
 const App = () => {
 
-  const [isLoggedIn, setLoggedIn] = useState(false)
-  const [businessLogic, setBusinessLogic] = useState()
-  
+  const [isLoggedIn, setLoggedIn] = useState()
+  const apiContext = useContext(ApiContext)
+  let eventUnSubs = []
+
   useEffect(() => {
 
-    console.log('initializing app business logic')
-    const bl = new BusinessLogic()
-    setBusinessLogic(bl)
-    bl.login(null, null, true, setLoggedIn)
-    window.bl = bl
-
+    apiContext.businessLogic.subscribeLogin(setLoggedIn, eventUnSubs)
+    apiContext.businessLogic.login(null, null, true)
+    window.bl = apiContext.businessLogic
+ 
     return () => {
 
-      console.log('disposing app business logic')
-      bl.dispose()
+      eventUnSubs.forEach(u => u.off())
 
     };
 
   }, []);
 
+  function pageNotFound(){
+    return(<h1>page not found</h1>)
+  }
+
   return (
-    <ApiContext.Provider value={{businessLogic: businessLogic}}>
       <BrowserRouter basename='sovereign'>
         <Switch>
           {isLoggedIn && 
             <>
-              <Route path="/" exact><Redirect to="/followingFeed" /></Route>
-              <Route path="/singleFeed/:id" component={SingleFeed} />
-              <Route path="/singleProfile/:id" component={SingleProfile} />
-              <Route path="/followingFeed" component={FollowingFeed} />
-              <Route path="/followingProfiles" component={FollowingProfile} />
-              <Route path="/splitScreen/:id" component={SplitScreen} />
-              <Route path="/settings" component={Settings} />
+              <Route path="/" exact><Redirect to="/following" /></Route>
+              <Route path="/following" component={Following} />
+              <Route path="/feed/:soul" component={Feed} />
             </>
           }
           {!isLoggedIn && 
@@ -53,7 +46,6 @@ const App = () => {
           }
         </Switch>
       </BrowserRouter>
-    </ApiContext.Provider>
   )
 
 }

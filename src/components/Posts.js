@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import ApiContext from "../api/ApiContext"
 import Post from './Post'
 
-const Posts = () => {
+const Posts = ({soul}) => {
 
     const apiContext = useContext(ApiContext)
     const [posts, setPosts] = useState([])
@@ -13,7 +13,7 @@ const Posts = () => {
 
         console.log('setting posts event handler')
         
-        apiContext.businessLogic.subscribePosts(setPosts, eventUnSubs)
+        apiContext.businessLogic.subscribePosts(setPosts, soul, eventUnSubs)
   
         return () => {
 
