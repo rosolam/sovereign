@@ -13,18 +13,19 @@
 }
 
 .rounded-corners{
-  border-radius: 25px;
+  border-radius: 10px;
 }
 
 .max-height-75{
   max-height: 75vh;
 }
 
-.post-text{
-  max-height:50vh;
-  overflow: auto;
-}
-
 .split-left{
   min-width: 400px;
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

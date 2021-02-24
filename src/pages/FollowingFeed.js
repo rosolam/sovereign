@@ -9,6 +9,7 @@ const FollowingFeed = () => {
 
     return (
         <>
+        <Link to={'/followingProfiles'}>back</Link>
         <Header/>
         <NewPostModal/>
         <Posts/>

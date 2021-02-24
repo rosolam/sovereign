@@ -11,12 +11,12 @@ const Profiles = () => {
 
     useEffect(() => {
 
-        console.log('setting profile event handler')
+        console.log('setting profiles event handler')
         apiContext.businessLogic.subscribeProfiles(setProfiles, eventUnSubs)
   
         return () => {
 
-            console.log('dropping profile event handler')
+            console.log('dropping profiles event handler')
             if(eventUnSubs){
                 eventUnSubs.forEach(u => u.off())
             }

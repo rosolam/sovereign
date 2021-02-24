@@ -1,5 +1,6 @@
 import missingProfileImage from '../media/missing-profile-picture.png'
 import {Dropdown} from 'react-bootstrap'
+import {useHistory} from 'react-router-dom';
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
 
@@ -11,8 +12,10 @@ const Profile = ({soul}) => {
     const [profile, setProfile] = useState({name:'loading...', picture:''})
     const [following, setFollowing] = useState({unfollowed: true, trusted: false, mute: false})
     const [lastPost, setLastPost] = useState()
+    const [timeElapsed, setTimeElapsed] = useState('')
+    const history = useHistory();
 
-    let eventUnSubs
+    let eventUnSubs = []
 
     useEffect(() => {
 
@@ -24,7 +27,7 @@ const Profile = ({soul}) => {
             setLastPost,
             eventUnSubs
         )
-        
+
         return () => {
 
             console.log('dropping profile event handler')
@@ -36,25 +39,42 @@ const Profile = ({soul}) => {
 
     }, [])
 
+    let timeElapsedUnSub = []
+
+    useEffect(() => {
+        
+        if(!lastPost){return}
+
+        console.log('setting last post elapsed time event handler')
+        apiContext.businessLogic.subscribeTimeElapsed(lastPost.created, setTimeElapsed, timeElapsedUnSub)
+
+        return () => {
+            console.log('dropping last post elapsed time event handler')
+            if(timeElapsedUnSub){
+                timeElapsedUnSub.forEach(u => u.off())
+            }
+        }
+
+    }, [lastPost])
+
+    const onProfileClick = (e) => { 
+        e.preventDefault()
+        history.push('/followingFeed/' + apiContext.businessLogic.parseUserFromSoul(soul));
+    }
+
     return (
-        <div className="profile d-flex flex-column border">
-            <div className="d-flex">
-                <img className="m-1 rounded" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
-                <div className="d-flex flex-column flex-grow-1">
-                    <span>{profile.name}</span>
-                    <span>{lastPost ? lastPost.text : ''}</span>
+        <div className="profile d-flex" onClick={onProfileClick}>
+            <img className="m-1 rounded" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
+            <div className="d-flex flex-column flex-grow-1">
+                <div className="d-flex flex-fill">
+                    <div style={{fontWeight:700, fontSize:'20px'}}>{profile.name}</div>
+                    <div style={{marginLeft:'auto'}}><div className='mr-2'></div></div>
+                </div>
+                <div className="d-flex flex-fill">
+                    <div className='ellipsis' style={{width:250, fontWeight:700, fontSize:'12px'}}>{lastPost ? lastPost.text : ''}</div>
+                    <div className='d-flex' style={{marginLeft:'auto'}}><div className='mr-2' style={{fontWeight:700, fontSize:'12px'}}>{timeElapsed}</div></div>
                 </div>
             </div>
-            <Dropdown>
-                <Dropdown.Toggle className="btn-sm">action</Dropdown.Toggle>
-                <Dropdown.Menu>
-                    <Dropdown.Item>Open</Dropdown.Item>
-                    <Dropdown.Item>Copy ID to Clipboard</Dropdown.Item>
-                    <Dropdown.Item>Trust</Dropdown.Item>
-                    <Dropdown.Item>Mute</Dropdown.Item>
-                    <Dropdown.Item>Unfollow</Dropdown.Item>
-                </Dropdown.Menu>
-            </Dropdown>
         </div>
     )
 

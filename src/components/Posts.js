@@ -11,12 +11,13 @@ const Posts = () => {
 
     useEffect(() => {
 
-        console.log('setting post event handler')
+        console.log('setting posts event handler')
+        
         apiContext.businessLogic.subscribePosts(setPosts, eventUnSubs)
   
         return () => {
 
-            console.log('dropping post event handler')
+            console.log('dropping posts event handler')
             if(eventUnSubs){
                 eventUnSubs.forEach(u => u.off())
             }

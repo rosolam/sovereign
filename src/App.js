@@ -1,78 +1,61 @@
-import React, { Component } from 'react'
-import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
+import React, { useState, useEffect} from 'react'
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom'
 import './App.css'
 import SingleFeed from './pages/SingleFeed'
 import Login from './pages/Login'
-import Gun from 'gun'
-import SEA from 'gun/sea'
 import Settings from './pages/Settings'
-import ApiContext from "./api/ApiContext"
 import SingleProfile from './pages/SingleProfile'
 import FollowingProfile from './pages/FollowingProfiles'
 import FollowingFeed from './pages/FollowingFeed'
 import SplitScreen from './pages/SplitScreen'
 import BusinessLogic from './api/BusinessLogic'
+import ApiContext from "./api/ApiContext"
 
-class App extends Component {
+const App = () => {
 
-   constructor(){
-    super()
-    this.gun = Gun("http://192.168.1.99:8080/gun")
-    this.gunUser = this.gun.user()
-    this.businessLogic = new BusinessLogic(this.gun, this.gunUser)
-    this.state = {
-      isAuthenticated: false
-    }    
-    //To have access to gun object in browser console
-    window.gun = this.gun 
-    window.gunUser = this.gunUser
-  }
+  const [isLoggedIn, setLoggedIn] = useState(false)
+  const [businessLogic, setBusinessLogic] = useState()
   
-  componentDidMount(){
-    console.log('setting gun auth handler')
-    this.gun.on('auth', ack => this.handleUserAuthed(ack))
-    this.gunUser.recall({sessionStorage: true})
-  }
+  useEffect(() => {
 
-  handleUserAuthed = (ack) => {
-    console.log("auth event", ack)
-    this.gunAppRoot = this.gunUser.get('sovereign')
-    window.gunAppRoot = this.gunAppRoot
-    this.businessLogic.gunAppRoot = this.gunAppRoot
-    this.setState({isAuthenticated: true} )    
-  }
+    console.log('initializing app business logic')
+    const bl = new BusinessLogic()
+    setBusinessLogic(bl)
+    bl.login(null, null, true, setLoggedIn)
+    window.bl = bl
 
-  render() {
+    return () => {
 
-      if(!this.state.isAuthenticated){
-        return <Login/>
-      }
+      console.log('disposing app business logic')
+      bl.dispose()
 
-      return(
-        <ApiContext.Provider value= {{
-          gun: this.gun,
-          gunUser: this.gunUser,
-          gunAppRoot: this.gunAppRoot,
-          soul: this.gunUser._.soul,
-          businessLogic: this.businessLogic
-        }}>
-        <BrowserRouter basename='sovereign'>
-          <Switch>
-            <Route path="/" exact>
-              <Redirect to="/followingFeed"/>
-            </Route>
-            <Route path="/singleFeed/:id" component={SingleFeed}/>
-            <Route path="/singleProfile/:id" component={SingleProfile}/>
-            <Route path="/followingFeed" component={FollowingFeed}/>
-            <Route path="/followingProfiles" component={FollowingProfile}/>
-            <Route path="/splitScreen" component={SplitScreen}/>
-            <Route path="/settings" component={Settings}/>
-            <Route path="/login" component={Login}/>
-          </Switch>
-        </BrowserRouter>
-        </ApiContext.Provider>
-      )
-    }
+    };
+
+  }, []);
+
+  return (
+    <ApiContext.Provider value={{businessLogic: businessLogic}}>
+      <BrowserRouter basename='sovereign'>
+        <Switch>
+          {isLoggedIn && 
+            <>
+              <Route path="/" exact><Redirect to="/followingFeed" /></Route>
+              <Route path="/singleFeed/:id" component={SingleFeed} />
+              <Route path="/singleProfile/:id" component={SingleProfile} />
+              <Route path="/followingFeed" component={FollowingFeed} />
+              <Route path="/followingProfiles" component={FollowingProfile} />
+              <Route path="/splitScreen/:id" component={SplitScreen} />
+              <Route path="/settings" component={Settings} />
+            </>
+          }
+          {!isLoggedIn && 
+            <Route path="/" component={Login}/>
+          }
+        </Switch>
+      </BrowserRouter>
+    </ApiContext.Provider>
+  )
+
 }
 
-export default App;
+export default App

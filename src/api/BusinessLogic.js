@@ -1,12 +1,81 @@
+import Gun from 'gun'
+import SEA from 'gun/sea'
+
 class BusinessLogic {
-    gunAppRoot
-    constructor(gun, gunUser){
-        this.gun = gun;
-        this.gunUser = gunUser;
-    }  
+    
+    isLoggedIn = false;
+    gun;
+    gunUser;
+    gunAppRoot;
+
+    constructor(peer){
+        this.gun = Gun(peer ? peer : "http://192.168.1.99:8080/gun")
+        this.gunUser = this.gun.user()
+        console.log('constructed')
+    }
+    
+    dispose(){
+        //todo
+    }
+
+    login(user, password, recall, setLoggedIn){
+
+        console.log('login request')
+
+        //ready call back for login
+        this.gun.on('auth', async (ack) => {
+            console.log('users authed', ack)
+            this.isLoggedIn = true
+            this.gunAppRoot = this.gunUser.get('sovereign')
+            //console.log('gunAppRoot', await this.gunAppRoot.then())
+            setLoggedIn(true)
+        })
+        
+        //recall
+        if(recall){
+            this.gunUser.recall({sessionStorage: true})
+        } else {
+            this.gunUser.auth(user, password)
+        }
+
+    }
+
+    getTimeElapsed(time){
+        
+        const now = new Date().getTime()
+        const diff = now - time
+
+        if(diff < 60000){
+            return 'just now'
+        }else if(diff < 3600000){
+            return Math.round(diff/60000) + 'mins'
+        }else if(diff < 86400000){
+            return Math.round(diff/3600000) + 'hrs'
+        }else if(diff < 604800000){
+            return Math.round(diff/86400000) + 'days'
+        }else if(diff < 2629743831.225){
+            return Math.round(diff/604800000) + 'wks'
+        }else if(diff < 31556925974.7){
+            return Math.round(diff/2629743831.225) + 'mos'
+        }else {
+            return 'long ago'
+        }
+    }
+
+    async subscribeTimeElapsed(time, setElapsed, unSubs){
+
+        unSubs = unSubs ? unSubs : []
+
+        const intervalId = setInterval(setElapsed(this.getTimeElapsed(time)),120000)
+        
+        const unSub = {}
+        unSub.off = () => {clearInterval(intervalId)}
+        unSubs.push(unSub)
+
+    }
 
     //* Utility function to parse user from a soul
-    static parseUserFromSoul(soul){
+    parseUserFromSoul(soul){
 
         if(!soul){return}
         var patt = /^~[^/]*/;
@@ -16,7 +85,7 @@ class BusinessLogic {
     }
     
     //* Utility function to parse content id from a soul
-    static parseIDFromSoul(soul){
+    parseIDFromSoul(soul){
       
         if(!soul){return}
         var patt = /[^/]*$/;
@@ -27,10 +96,10 @@ class BusinessLogic {
     }
 
     isMine(soul){
-        return BusinessLogic.parseUserFromSoul(soul) == this.gunUser['_'].soul
+        return this.parseUserFromSoul(soul) == this.gunUser['_'].soul
     }
 
-    static getMaxTimeStampOfNode(value){
+    getMaxTimeStampOfNode(value){
 
         //get max timestamp of properties (being careful to avoid prototype and any possible non numerics that could somehow be picked up)
         let maxTimeStamp = 0
@@ -79,7 +148,7 @@ class BusinessLogic {
 
                 //No, has it changed?
                 const existingItem = prevState[existingIndex]
-                if (BusinessLogic.getMaxTimeStampOfNode(value) > BusinessLogic.getMaxTimeStampOfNode(existingItem)) {
+                if (this.getMaxTimeStampOfNode(value) > this.getMaxTimeStampOfNode(existingItem)) {
 
                     //yes, update it
                     //console.log('updating item')
@@ -148,7 +217,7 @@ class BusinessLogic {
         
         //delete
         //this.gun.get(soul).put(null)
-        const id = BusinessLogic.parseIDFromSoul(soul)
+        const id = this.parseIDFromSoul(soul)
         this.gunAppRoot.get('posts').get(id).put(null)
         
     }
@@ -186,7 +255,7 @@ class BusinessLogic {
         //apiContext.gun.get(singleUser).get('sovereign').get('posts').map().on((value, key, _msg, _ev) => handlePostUpdate(value, key, _msg, _ev))
 
         //track events to unsub
-        unSubs = []
+        unSubs = unSubs ? unSubs : []
 
         //handle updates to the posts of the users I follow
         this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
@@ -201,7 +270,7 @@ class BusinessLogic {
     async subscribeProfiles(setProfiles, unSubs){
 
         //track events to unsub
-        unSubs = []
+        unSubs = unSubs ? unSubs : []
 
         //handle updates to the profiles of the users I follow
         this.gunAppRoot.get('following').map().on(
@@ -223,7 +292,7 @@ class BusinessLogic {
     async subscribeProfile(soul, setProfile, setFollowing, setLastPost, unSubs){
 
         //track events to unsub
-        unSubs = []
+        unSubs = unSubs ? unSubs : []
 
         //get profile
         this.gun.get(soul).on(
@@ -234,7 +303,7 @@ class BusinessLogic {
         )
 
         //get following
-        this.gunAppRoot.get('following').get(BusinessLogic.parseUserFromSoul(soul)).on(
+        this.gunAppRoot.get('following').get(this.parseUserFromSoul(soul)).on(
             (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                 setFollowing(value)
@@ -254,7 +323,7 @@ class BusinessLogic {
     async subscribePost(soul, setPost, setAttachments, setProfile, unSubs){
 
         //track events to unsub
-        unSubs = []
+        unSubs = unSubs ? unSubs : []
 
         //get post
         this.gun.get(soul).on(
@@ -273,7 +342,7 @@ class BusinessLogic {
         )
 
         //get profile of the poster
-        this.gun.get(BusinessLogic.parseUserFromSoul(soul)).get('sovereign').get('profile').on(
+        this.gun.get(this.parseUserFromSoul(soul)).get('sovereign').get('profile').on(
             (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                 setProfile(value)

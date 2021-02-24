@@ -37,10 +37,8 @@ const Post = ({soul, isSingleUser}) => {
     function LargeProfileHeader(){
         return (
             <div className="d-flex">
-                <div><img className="m-3 rounded" height="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
-                <div className="align-self-center">
-                    <h4>{profile ? profile.name : 'loading...'}</h4>
-                </div>
+                <div><img className="m-1 rounded-corners" height="40" width="40" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
+                <div className="align-self-center" style={{'font-weight':700, 'font-size':'20px'}}>{profile ? profile.name : 'loading...'}</div>
             </div>
         );
     }
@@ -88,20 +86,18 @@ const Post = ({soul, isSingleUser}) => {
 
     return (
 
-            <div className="border post m-3 p-3 d-flex flex-column justify-content-start bg-light rounded-corners">
+            <div className="border post m-3 d-flex flex-column justify-content-start bg-light rounded-corners">
         
                 {isSingleUser ? <SmallProfileHeader/> : <LargeProfileHeader/>}
         
-                <div className="d-flex">
-                    <div className="flex-grow-1 post-text">
-                        <h3>{postRoot.text}</h3>
-                    </div>
+                <div className="d-flex m-1">
+                    <div className="flex-grow-1" style={{'max-height':'50vh', overflow: 'auto','font-weight':700, 'font-size':'20px'}}>{postRoot.text}</div>
                 </div>
 
                 <ImageSpot/>
 
-                <div className="d-flex">
-                    <div><small><i>{Date(postRoot.created)}</i></small></div>
+                <div className="d-flex m-1">
+                    <div style={{'font-weight':700, 'font-size':'10px'}}>{Date(postRoot.created)}</div>
                     <div className="flex-grow-1"></div>
                     <div>
                         <Dropdown>
