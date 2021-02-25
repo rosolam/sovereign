@@ -349,13 +349,14 @@ class BusinessLogic {
             this.gun.get(soul).get('sovereign').get('profile').on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    setProfile(value)
+                    setProfile({...value})
+                    console.log('set profile event')
                 }
             )
         }
 
         //get following
-        if(setFollowing){
+        if(!this.isMine(soul) && setFollowing){
             this.gunAppRoot.get('following').get(soul).on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}

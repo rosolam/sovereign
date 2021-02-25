@@ -2,17 +2,13 @@ import {useState, useEffect, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 
-const UpdateProfileModal = () => {
+const UpdateProfileModal = ({show, onClose}) => {
     
     const apiContext = useContext(ApiContext)
     
-    const [show, setShow] = useState(false)
     const [name, setName] = useState('')
     const [picture, setPicture] = useState('')
   
-    const handleClose = () => setShow(false)
-    const handleShow = () => setShow(true)
-
     const handleSubmit = (e) => {
         
         e.preventDefault()
@@ -23,14 +19,14 @@ const UpdateProfileModal = () => {
             return
         }
         
-        //follow user
+        //update profile
         apiContext.businessLogic.updateProfile({
             name: name,
             picture: picture
         })
 
-        //close the form
-        setShow(false)
+        //close
+        onClose()
 
     } 
   
@@ -45,11 +41,8 @@ const UpdateProfileModal = () => {
 
     return (
         <>
-            <Button variant="primary" onClick={handleShow}>Update Profile</Button>
-
-            <Modal show={show} onHide={handleClose}>
-                <form onSubmit={handleSubmit}>
-                <Modal.Header closeButton>
+            <Modal show={show} onHide={onClose}>
+                 <Modal.Header closeButton>
                     <Modal.Title>Update Profile</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
@@ -63,10 +56,9 @@ const UpdateProfileModal = () => {
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleClose}>Follow!</Button>
+                    <Button variant="secondary" onClick={onClose}>Close</Button>
+                    <Button variant="primary" type="submit" onClick={handleSubmit}>Update</Button>
                 </Modal.Footer>
-                </form>
             </Modal>
       </>
     );

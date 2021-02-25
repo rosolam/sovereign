@@ -2,15 +2,12 @@ import {useState, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 
-const FollowUserModal = () => {
+const FollowModal = ({onClose}) => {
     
     const apiContext = useContext(ApiContext)
-    const [show, setShow] = useState(false)
+
     const [soul, setSoul] = useState('')
   
-    const handleClose = () => setShow(false)
-    const handleShow = () => setShow(true)
-    
     const handleSubmit = (e) => {
         
         e.preventDefault()
@@ -20,27 +17,18 @@ const FollowUserModal = () => {
             alert('Please provide a user id')
             return
         }
-        
-        //get user referecne
-        const userRef = apiContext.gun.get(soul)
-    
-        //follow user
-        apiContext.gunAppRoot.get('following').get(soul).put({ trusted: false, mute: false }).get('user').put(userRef);
-    
-        //close the form
-        setShow(false)
 
-        //reset the form via the state
-        setSoul('')
+        //follow user
+        apiContext.businessLogic.followUser(soul)
+
+        //close
+        onClose()
 
     } 
   
     return (
         <>
-            <Button variant="primary" onClick={handleShow}>Follow User</Button>
-
-            <Modal show={show} onHide={handleClose}>
-                <form onSubmit={handleSubmit}>
+            <Modal show={true} onHide={onClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>Follow User</Modal.Title>
                 </Modal.Header>
@@ -51,13 +39,12 @@ const FollowUserModal = () => {
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleClose}>Follow!</Button>
+                    <Button variant="secondary" onClick={onClose}>Close</Button>
+                    <Button variant="primary" type="submit" onClick={handleSubmit}>Follow!</Button>
                 </Modal.Footer>
-                </form>
             </Modal>
       </>
     );
 }
 
-export default FollowUserModal
+export default FollowModal
