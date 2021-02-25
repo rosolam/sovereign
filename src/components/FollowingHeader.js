@@ -7,7 +7,7 @@ const FollowingHeader = () => {
     
   const [followModal, setFollowModal] = useState(false)
   const [myProfileModal, setMyProfileModal] = useState(false)
-
+  
   return (
     <>
       

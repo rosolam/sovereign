@@ -38,7 +38,7 @@ const Post = ({soul}) => {
         return (
             <div className="d-flex">
                 <div><img className="m-1 rounded-corners" height="40" width="40" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
-                <div className="align-self-center" style={{'font-weight':700, 'font-size':'20px'}}>{profile ? profile.name : 'loading...'}</div>
+                <div className="align-self-center" style={{'fontWeight':700, 'fontSize':'20px'}}>{profile ? profile.name : 'loading...'}</div>
             </div>
         );
     }
@@ -80,13 +80,13 @@ const Post = ({soul}) => {
                 {!soul && <ProfileHeader/>}
         
                 <div className="d-flex m-1">
-                    <div className="flex-grow-1" style={{'max-height':'50vh', overflow: 'auto','font-weight':700, 'font-size':'20px'}}>{postRoot.text}</div>
+                    <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto','fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
                 </div>
 
                 <ImageSpot/>
 
                 <div className="d-flex m-1">
-                    <div style={{'font-weight':700, 'font-size':'10px'}}>{Date(postRoot.created)}</div>
+                    <div style={{'fontWeight':700, 'fontSize':'10px'}}>{Date(postRoot.created)}</div>
                     <div className="flex-grow-1"></div>
                     <div>
                         <Dropdown>
