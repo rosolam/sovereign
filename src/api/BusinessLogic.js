@@ -157,7 +157,7 @@ class BusinessLogic {
 
             //new, add item item to state
             //console.log('adding item')
-            const newItem = value
+            const newItem = {...value}
             newItem.key = key
 
             //sort the new item into the array
@@ -183,7 +183,7 @@ class BusinessLogic {
 
                     //yes, update it
                     //console.log('updating item')
-                    const updatedItem = value
+                    const updatedItem = {...value}
                     updatedItem.key = key
                     return ([...prevState.filter(p => p.key !== key),updatedItem].sort((a, b) => {  return b[sortBy] - a[sortBy] }))
 
@@ -326,7 +326,7 @@ class BusinessLogic {
         this.gunAppRoot.get('following').map().on(
             async (value, key, _msg, _ev) => {
                 
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}   
                 
                 //add a value to sort on
                 if(value){
@@ -360,7 +360,7 @@ class BusinessLogic {
             this.gunAppRoot.get('following').get(soul).on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    setFollowing(value) 
+                    setFollowing({...value}) 
                 }
             )   
         }
@@ -370,7 +370,7 @@ class BusinessLogic {
             this.gun.get(soul).get('sovereign').get('profile').get('lastPost').on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    setLastPost(value)
+                    setLastPost({...value})
                 }
             )
         }
@@ -386,7 +386,7 @@ class BusinessLogic {
         this.gun.get(soul).on(
             (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setPost(value)
+                setPost({...value})
             }
         )
         
@@ -402,7 +402,7 @@ class BusinessLogic {
         this.gun.get(this.parseUserFromSoul(soul)).get('sovereign').get('profile').on(
             (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setProfile(value)
+                setProfile({...value})
             }
         )
 
