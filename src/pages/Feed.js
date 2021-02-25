@@ -1,7 +1,6 @@
-import ProfileHeader from '../components/ProfileHeader'
+import FeedHeader from '../components/FeedHeader'
 import Posts from '../components/Posts'
 import {useParams} from 'react-router-dom';
-import { BackArrow } from '../components/BackArrow';
 
 const ProfileFeed = () => {
     
@@ -9,10 +8,7 @@ const ProfileFeed = () => {
 
     return (
         <>
-        <div className="d-flex border">
-            <BackArrow path='/Following'/>
-            <ProfileHeader soul={soul}/>
-        </div>
+        <FeedHeader soul={soul}/>
         <Posts soul={soul}/>
         </>
     )

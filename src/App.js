@@ -39,6 +39,7 @@ const App = () => {
               <Route path="/" exact><Redirect to="/following" /></Route>
               <Route path="/following" component={Following} />
               <Route path="/feed/:soul" component={Feed} />
+              <Route path="/login" component={Login}/>
             </>
           }
           {!isLoggedIn && 

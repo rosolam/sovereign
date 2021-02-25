@@ -71,6 +71,14 @@ class BusinessLogic {
 
     }
 
+    logout(){
+
+        console.log('logout request')
+        this.gunUser.leave()
+        this.isLoggedIn = false
+        
+    }
+
     getTimeElapsed(time){
         
         const now = new Date().getTime()
@@ -79,15 +87,15 @@ class BusinessLogic {
         if(diff < 60000){
             return 'just now'
         }else if(diff < 3600000){
-            return Math.round(diff/60000) + 'mins'
+            return Math.round(diff/60000) + ' mins'
         }else if(diff < 86400000){
-            return Math.round(diff/3600000) + 'hrs'
+            return Math.round(diff/3600000) + ' hrs'
         }else if(diff < 604800000){
-            return Math.round(diff/86400000) + 'days'
+            return Math.round(diff/86400000) + ' days'
         }else if(diff < 2629743831.225){
-            return Math.round(diff/604800000) + 'wks'
+            return Math.round(diff/604800000) + ' wks'
         }else if(diff < 31556925974.7){
-            return Math.round(diff/2629743831.225) + 'mos'
+            return Math.round(diff/2629743831.225) + ' mos'
         }else {
             return 'long ago'
         }

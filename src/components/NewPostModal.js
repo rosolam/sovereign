@@ -2,15 +2,12 @@ import {useState, useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 
-const NewPostModal = () => {
+const NewPostModal = ({show, onClose}) => {
 
     const apiContext = useContext(ApiContext)
 
-    const [show, setShow] = useState(false)
     const [text, setText] = useState('')
   
-    const handleClose = () => setShow(false)
-    const handleShow = () => setShow(true)
     const handleSubmit = (e) => {
         
         e.preventDefault()
@@ -26,20 +23,17 @@ const NewPostModal = () => {
             text: text
         })
 
-        //close the form
-        setShow(false)
-
         //reset the form via the state
-        setText('')
+        //setText('')
+
+        //close the form
+        onClose()
 
     } 
   
     return (
         <>
-            <Button variant="primary" onClick={handleShow}>New Post</Button>
-
-            <Modal show={show} onHide={handleClose}>
-                <form onSubmit={handleSubmit}>
+            <Modal show={show} onHide={onClose}>
                 <Modal.Header closeButton>
                     <Modal.Title>New Post</Modal.Title>
                 </Modal.Header>
@@ -50,10 +44,9 @@ const NewPostModal = () => {
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleClose}>Post!</Button>
+                    <Button variant="secondary" onClick={onClose}>Close</Button>
+                    <Button variant="primary" type="submit" onClick={handleSubmit}>Post!</Button>
                 </Modal.Footer>
-                </form>
             </Modal>
       </>
     );

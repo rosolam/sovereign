@@ -1,25 +1,19 @@
-import {useState, useContext} from 'react'
+import {useContext} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 
-const FollowModal = ({show, onClose}) => {
+const AddressModal = ({show, onClose, soul}) => {
     
     const apiContext = useContext(ApiContext)
+    let textAreaRef
 
-    const [soul, setSoul] = useState('')
-  
     const handleSubmit = (e) => {
         
         e.preventDefault()
         
-        //TODO validation
-        if(!soul){
-            alert('Please provide a user id')
-            return
-        }
-
-        //follow user
-        apiContext.businessLogic.followUser(soul)
+        //copy to clipboard
+        textAreaRef.select()
+        document.execCommand("copy")
 
         //close
         onClose()
@@ -30,21 +24,21 @@ const FollowModal = ({show, onClose}) => {
         <>
             <Modal show={show} onHide={onClose}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Follow User</Modal.Title>
+                    <Modal.Title>Sovereign Address</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form.Group controlId="formUserAddress">
-                        <Form.Label>User Address</Form.Label>
-                        <Form.Control type="text" placeholder="user's address..." value={soul} onChange={(e) => setSoul(e.target.value)} />
+                        <Form.Label>Address</Form.Label>
+                        <Form.Control ref={(textarea) => textAreaRef = textarea} as="textarea" rows="3" size='md' value={soul} readOnly/>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={onClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleSubmit}>Follow!</Button>
+                    <Button variant="primary" type="submit" onClick={handleSubmit}>Copy To Clipboard</Button>
                 </Modal.Footer>
             </Modal>
       </>
     );
 }
 
-export default FollowModal
+export default AddressModal
