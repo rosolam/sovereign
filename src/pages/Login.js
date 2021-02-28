@@ -27,7 +27,6 @@ const Login = () => {
         }
         
         //login
-        console.log(apiContext)
         apiContext.businessLogic.login(username,password,false)
 
         //redirect to home
@@ -57,7 +56,7 @@ const Login = () => {
     return (
         <div className='m-3'>
 
-            <Tabs defaultActiveKey="login" id="uncontrolled-tab-example">
+            <Tabs defaultActiveKey="login">
 
                 <Tab eventKey="login" title="Log In" className="border border-top-0 p-3">
                     <Form.Group controlId="formLoginUsername">

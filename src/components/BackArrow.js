@@ -1,7 +1,7 @@
 import ArrowBackIcon from '@material-ui/icons/ArrowBack';
 import {useHistory} from 'react-router-dom';
 
-export const BackArrow = ({path}) => {
+const BackArrow = ({path}) => {
 
     const history = useHistory();
 
@@ -12,6 +12,8 @@ export const BackArrow = ({path}) => {
     }
     
     return (
-        <div className='d-flex flex-column justify-content-center'><ArrowBackIcon style={{fontSize:'50px'}} onClick={onBackArrowClick}/></div>
+        <ArrowBackIcon style={{fontSize:'30px', height:'50px'}} onClick={onBackArrowClick}/>
     )
 }
+
+export default BackArrow

@@ -1,11 +1,18 @@
 import { Link } from "react-router-dom"
+import IpfsSettings from "../components/IpfsSettings"
+import Header from "../components/Header"
 
 const Settings = () => {
+    
+    const headerBack = '/following/'
+    const headerLabel = 'Settings'
+    const headerNavs = null
+    
     return (
-        <div>
-            Settings
-            <Link to="/">home</Link>
-        </div>
+        <>
+            <Header back={headerBack} label={headerLabel} navs={headerNavs}/>            
+            <IpfsSettings/>
+        </>
     )
 }
 

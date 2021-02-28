@@ -10,6 +10,7 @@ const Profile = ({soul}) => {
     const apiContext = useContext(ApiContext)
     let { id } = useParams();
     const [profile, setProfile] = useState({name:'loading...', picture:''})
+    const [profilePic, setProfilePic] = useState()
     const [following, setFollowing] = useState({unfollowed: true, trusted: false, mute: false})
     const [lastPost, setLastPost] = useState()
     const [timeElapsed, setTimeElapsed] = useState('')
@@ -23,6 +24,7 @@ const Profile = ({soul}) => {
         apiContext.businessLogic.subscribeProfile(
             soul,
             setProfile,
+            setProfilePic,
             setFollowing,
             setLastPost,
             eventUnSubs
@@ -38,6 +40,11 @@ const Profile = ({soul}) => {
         };
 
     }, [])
+
+    useEffect(() => () => {
+        // Make sure to revoke the data uris to avoid memory leaks
+        URL.revokeObjectURL(profilePic);
+    }, [profilePic]);
 
     let timeElapsedUnSub = []
 
@@ -64,14 +71,14 @@ const Profile = ({soul}) => {
 
     return (
         <div className="profile d-flex" onClick={onProfileClick}>
-            <img className="m-1 circle-image" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
+            <img className="m-1 circle-image" height="50" width="50" src={profilePic ? profilePic : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
             <div className="d-flex flex-column flex-grow-1">
                 <div className="d-flex flex-fill">
                     <div style={{fontWeight:700, fontSize:'20px'}}>{profile.name}</div>
                     <div style={{marginLeft:'auto'}}><div className='mr-2'></div></div>
                 </div>
                 <div className="d-flex flex-fill">
-                    <div className='ellipsis' style={{width:250, fontWeight:700, fontSize:'12px'}}>{lastPost ? lastPost.text : ''}</div>
+                    <div className='ellipsis' style={{width:225, fontWeight:700, fontSize:'12px'}}>{lastPost ? lastPost.text : ''}</div>
                     <div className='d-flex' style={{marginLeft:'auto'}}><div className='mr-2' style={{fontWeight:700, fontSize:'12px'}}>{timeElapsed}</div></div>
                 </div>
             </div>

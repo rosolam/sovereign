@@ -1,5 +1,9 @@
 import Gun from 'gun'
 import SEA from 'gun/sea'
+import IpfsProviderLocalNode from './IpfsProviders/IpfsProviderLocalNode'
+import IpfsProviderGateway from './IpfsProviders/IpfsProviderGateway'
+import IpfsProviderPinata from './IpfsProviders/IpfsProviderPinata'
+import { PictureAsPdfSharp } from '@material-ui/icons'
 
 class BusinessLogic {
     
@@ -8,13 +12,25 @@ class BusinessLogic {
     gunUser;
     gunAppRoot;
     mySoul;
+    ipfsProvider;
     #eventUnSubs = [];
+    #setLoggedIn
+    userEncPair;
 
-    constructor(peer){
-        
-        this.gun = Gun(peer ? peer : "http://192.168.1.99:8080/gun")
-        
+    constructor(gunPeer){
+
+        if (typeof Gun.SEA === 'undefined') {
+            console.log('setting SEA reference')
+            Gun.SEA = SEA;
+        }
+        this.gun = Gun(gunPeer ? gunPeer : "https://dev.rosolalaboratories.com:4000/gun")
         this.gunUser = this.gun.user()
+
+        //setup default ipfs gateway provider while we attempt to use local ipfs node
+        this.ipfsProvider = new IpfsProviderGateway()
+        this.ipfsProvider.connect()
+
+        this.checkForLocaLIpfsNode()
         
         console.log('constructed')
 
@@ -22,6 +38,63 @@ class BusinessLogic {
     
     dispose(){
         this.#eventUnSubs.forEach(u => u.off())
+    }
+
+    async getSetting(name){
+        
+        const encValue = await this.gunAppRoot.get('settings').get(name).then()
+        return await SEA.decrypt(encValue, this.userEncPair)
+    }
+
+    async setSetting(name, value){
+
+        const encValue = await SEA.encrypt(value, this.userEncPair)
+        return await this.gunAppRoot.get('settings').get(name).put(encValue).then()
+    }
+
+    async connectToPinata(){
+
+        //get keys
+        const pinataApiKey = await this.getSetting('pinataApiKey')
+        const pinataApiSecret = await this.getSetting('pinataApiSecret')
+
+        //keys exist?
+        if(!pinataApiKey || !pinataApiSecret){
+            console.log('no pinata keys found')
+            return false
+        }
+
+        //connect
+        const ipfs = new IpfsProviderPinata()
+        const result = await ipfs.connect({
+            pinataApiKey: pinataApiKey,
+            pinataSecretApiKey: pinataApiSecret
+        })
+        console.log('ipfs pinata status',result)
+
+        //change to this provider if connected
+        if(result.connect){
+            console.log('connected to local ipfs node')    
+            this.ipfsProvider = ipfs
+            return true
+        } else{
+            return false
+        }
+
+    }
+
+    async checkForLocaLIpfsNode(){
+        
+        const ipfs = new IpfsProviderLocalNode()
+        const result = await ipfs.connect()
+        console.log('ipfs local node status',result)
+
+        //change to this provider if connected
+        if(result.connect){
+            console.log('connected to local ipfs node')    
+            this.ipfsProvider = ipfs
+        }
+
     }
 
     createUser(user, password, name){
@@ -44,6 +117,7 @@ class BusinessLogic {
 
     subscribeLogin(setLoggedIn, unSubs){
 
+        this.#setLoggedIn = setLoggedIn
         unSubs = unSubs ? unSubs : []
         this.gun.on('auth', async (ack) => {
             
@@ -51,8 +125,12 @@ class BusinessLogic {
             this.isLoggedIn = true
             this.gunAppRoot = this.gunUser.get('sovereign')
             this.mySoul = this.gunUser['_'].soul
-            //if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-            setLoggedIn(true)
+            this.userEncPair = ack.sea
+            
+            //if we aren't connected to a local node, let's try to connect to pinata now
+            if(!this.ipfsProvider.canPut){ await this.connectToPinata()} //await it to help ensure we connect before re-rendering
+            
+            this.#setLoggedIn(true)
 
         })
         
@@ -76,6 +154,7 @@ class BusinessLogic {
         console.log('logout request')
         this.gunUser.leave()
         this.isLoggedIn = false
+        this.#setLoggedIn(false)
         
     }
 
@@ -139,6 +218,8 @@ class BusinessLogic {
     }
 
     getMaxTimeStampOfNode(value){
+
+        if (!value || !value['_'] || !value['_']['>']){ return 0}
 
         //get max timestamp of properties (being careful to avoid prototype and any possible non numerics that could somehow be picked up)
         let maxTimeStamp = 0
@@ -226,23 +307,32 @@ class BusinessLogic {
         
     }
 
-    async createPost(post){
+    async createPost(post, pictures){
         
         //create new post
         const created = new Date().getTime()
-        const key = created + '_' + this.gunUser['_'].soul
+        const key = created + '_' + this.mySoul
         this.gunAppRoot.get('posts').get(key).put({
             text: post.text,
             created: created,
             modified: created,
             key: key
         }).once(async (data) => {
+            
+            //get the post and add ref to profile as last post
             const postRef = this.gunAppRoot.get('posts').get(key)
             this.gunAppRoot.get('profile').get('lastPost').put(postRef)
+
+            //add attachments
+            if(pictures && pictures.length){
+                pictures.forEach(async pic => {
+                    const picHash = await this.ipfsProvider.putFile(pic)
+                    postRef.get('attachments').set(picHash)
+                });
+            }
+
         })
 
-        //this.gunAppRoot.get('profile').get('lastPost').put(key)
- 
     }
 
     async deletePost(soul){
@@ -259,6 +349,13 @@ class BusinessLogic {
         const id = this.parseIDFromSoul(soul)
         this.gunAppRoot.get('posts').get(id).put(null)
         
+    }
+
+    async getPicture(hash){
+
+        const file = await this.ipfsProvider.getFile(hash)
+        return file
+
     }
 
     async getProfile(soul, cb){
@@ -281,7 +378,11 @@ class BusinessLogic {
 
     }
 
-    async updateProfile(profile){
+    async updateProfile(profile, picture){
+
+        if(picture){
+            profile.picture = await this.ipfsProvider.putFile(picture)
+        }
 
         //update profile
         return this.gunUser.get('sovereign').get('profile').put(profile)
@@ -347,7 +448,7 @@ class BusinessLogic {
 
     }
 
-    async subscribeProfile(soul, setProfile, setFollowing, setLastPost, unSubs){
+    async subscribeProfile(soul, setProfile, setProfilePic, setFollowing, setLastPost, unSubs){
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
@@ -358,7 +459,15 @@ class BusinessLogic {
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                     setProfile({...value})
-                    console.log('set profile event')
+                }
+            )
+        }
+        if(setProfilePic){
+            this.gun.get(soul).get('sovereign').get('profile').get('picture').on(
+                async(value, key, _msg, _ev) => {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    setProfilePic(await this.getPicture(value))
+                    console.log('set profile pic event')
                 }
             )
         }
@@ -400,9 +509,13 @@ class BusinessLogic {
         
         //get attachments
         this.gun.get(soul).get('attachments').map().on(
-            (value, key, _msg, _ev) => {
+            async (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setAttachments(prevState => this.manageArrayState(prevState, value, key, 'key'))
+                const attachment = {
+                    mime: 'image/*',
+                    url: await this.getPicture(value)
+                }
+                setAttachments(prevState => this.manageArrayState(prevState, attachment, key, 'key'))
             }
         )
 

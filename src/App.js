@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useContext} from 'react'
-import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom'
+import { BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
 import ApiContext from "./api/ApiContext"
 import './App.css'
 import Login from './pages/Login'
 import Following from './pages/Following'
+import Settings from './pages/Settings'
 import Feed from './pages/Feed'
 
 
-const App = () => {
+const App = ({baseUrl}) => {
 
-  const [isLoggedIn, setLoggedIn] = useState()
+  const [isLoggedIn, setLoggedIn] = useState(false)
   const apiContext = useContext(ApiContext)
-  let eventUnSubs = []
+  const eventUnSubs = []
 
   useEffect(() => {
 
@@ -27,23 +28,20 @@ const App = () => {
 
   }, []);
 
-  function pageNotFound(){
-    return(<h1>page not found</h1>)
-  }
-
   return (
-      <BrowserRouter basename='sovereign'>
+      <BrowserRouter basename={baseUrl + '/sovereign'}>
         <Switch>
           {isLoggedIn && 
             <>
               <Route path="/" exact><Redirect to="/following" /></Route>
               <Route path="/following" component={Following} />
               <Route path="/feed/:soul" component={Feed} />
-              <Route path="/login" component={Login}/>
+              <Route path="/settings" component={Settings} />
+              <Route path="*"><Redirect to="/following" /></Route>
             </>
           }
           {!isLoggedIn && 
-            <Route path="/" component={Login}/>
+            <Route path="*" component={Login}/>
           }
         </Switch>
       </BrowserRouter>

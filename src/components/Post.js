@@ -1,4 +1,5 @@
 import missingProfileImage from '../media/missing-profile-picture.png'
+import loadingImageAnimation from '../media/loading-attachment.gif'
 import { Dropdown, Carousel } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
@@ -34,6 +35,20 @@ const Post = ({soul}) => {
 
     }, [])
 
+    const hideLoadingAnimation = (key) => {
+
+        setAttachments( (prevState) => {
+
+            //get item
+            const existingItem = prevState.find((p) => p.key == key)
+            const updatedItem = {...existingItem}
+            updatedItem.isLoaded = true
+            return ([...prevState.filter(p => p.key !== key),updatedItem].sort((a, b) => {  return b['key'] - a['key'] }))
+
+        })
+
+    }
+
     function ProfileHeader(){
         return (
             <div className="d-flex">
@@ -54,7 +69,12 @@ const Post = ({soul}) => {
 
             //single picture
             return (
-                <img src={attachments[0].address} className="img-fluid mx-auto d-block max-height-75"/>
+                <>
+                    {!attachments[0].isLoaded && <img className="img-fluid mx-auto d-block max-height-75" src={loadingImageAnimation}/>}
+                    <img src={attachments[0].url} className="img-fluid mx-auto d-block max-height-75" onLoad={() => { 
+                        if(!attachments[0].isLoaded){hideLoadingAnimation(attachments[0].key)}
+                    }} />
+                </>
             );
 
         } else {
@@ -64,7 +84,10 @@ const Post = ({soul}) => {
                 <Carousel className="bg-dark">
                     {attachments.map((picture, index) => (
                         <Carousel.Item key={index}>
-                            <img src={picture.address} className="img-fluid d-block mx-auto max-height-75" />
+                            {!attachments[0].isLoaded && <img className="img-fluid mx-auto d-block max-height-75" src={loadingImageAnimation}/>}
+                            <img src={picture.url} className="img-fluid mx-auto d-block max-height-75" onLoad={() => { 
+                                if(!attachments[0].isLoaded){hideLoadingAnimation(picture.key)}
+                            }} />
                         </Carousel.Item>
                     ))}
                 </Carousel>
@@ -75,16 +98,16 @@ const Post = ({soul}) => {
 
     return (
 
-            <div className="border post m-3 d-flex flex-column justify-content-start bg-light rounded-corners">
+            <div className="border m-3 d-flex flex-column bg-light rounded-corners">
         
                 {!soul && <ProfileHeader/>}
         
                 <div className="d-flex m-1">
-                    <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto','fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
+                    <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto', overflowWrap: 'anywhere', 'fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
                 </div>
 
                 <ImageSpot/>
-
+                
                 <div className="d-flex m-1">
                     <div style={{'fontWeight':700, 'fontSize':'10px'}}>{Date(postRoot.created)}</div>
                     <div className="flex-grow-1"></div>

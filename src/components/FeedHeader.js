@@ -4,7 +4,7 @@ import missingProfileImage from '../media/missing-profile-picture.png'
 import { useHistory } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react'
 import ApiContext from '../api/ApiContext'
-import { BackArrow } from './BackArrow';
+import BackArrow from './BackArrow';
 import NewPostModal from './NewPostModal'
 import UpdateProfileModal from './UpdateProfileModal'
 import FollowModal from './FollowModal'
@@ -14,6 +14,7 @@ const FeedHeader = ({ soul }) => {
 
     const apiContext = useContext(ApiContext)
     const [profile, setProfile] = useState({ name: 'loading...', picture: '' })
+    const [profilePic, setProfilePic] = useState()
     const [following, setFollowing] = useState({ unfollowed: true, trusted: false, mute: false })
     const [followModal, setFollowModal] = useState(false)
     const [myProfileModal, setMyProfileModal] = useState(false)
@@ -31,6 +32,7 @@ const FeedHeader = ({ soul }) => {
         apiContext.businessLogic.subscribeProfile(
             soul,
             setProfile,
+            setProfilePic,
             setFollowing,
             null,
             eventUnSubs
@@ -47,6 +49,11 @@ const FeedHeader = ({ soul }) => {
 
     }, [])
 
+    useEffect(() => () => {
+        // Make sure to revoke the data uris to avoid memory leaks
+        URL.revokeObjectURL(profilePic);
+    }, [profilePic]);
+    
     const onProfileClick = (e) => {
         e.preventDefault()
         alert('expand profile?')
@@ -60,14 +67,12 @@ const FeedHeader = ({ soul }) => {
             <AddressModal show={addressModal} onClose={() => { setAddressModal(false) }} soul={soul} />
 
             <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
-                <Navbar.Brand href="#home">
-                    <div className='d-flex'>
-                        <BackArrow path='/Following' />
-                        <div className="profile d-flex align-items-center" onClick={onProfileClick}>
-                            <img className="m-2 circle-image" height="50" width="50" src={profile ? profile.picture : 'missing'} onError={(e) => { e.target.onerror = null; e.target.src = missingProfileImage }} />
-                            <div className='m-1' style={{ fontWeight: 700, fontSize: '20px' }}>{profile.name}</div>
-                        </div>
-                    </div>
+                <Navbar.Brand href="#" className='d-flex m-0 mr-1' >
+                    <BackArrow path='/Following' />
+                    <div className="d-flex" onClick={onProfileClick}>
+                        <img className="m-1 circle-image" height="50" width="50" src={profilePic ? profilePic : 'missing'} onError={(e) => { e.target.onerror = null; e.target.src = missingProfileImage }} />
+                        <div className='m-1 d-flex flex-wrap align-content-center' style={{ fontWeight: 700, width:'130px', fontSize: '15px', whiteSpace:'normal', overflowWrap:'anywhere'}}>{profile.name}</div>
+                    </div>  
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="responsive-navbar-nav" />
                 <Navbar.Collapse id="responsive-navbar-nav">
