@@ -1,6 +1,6 @@
 import { Navbar, Nav, NavDropdown } from 'react-bootstrap'
 import { Link } from "react-router-dom"
-import missingProfileImage from '../media/missing-profile-picture.png'
+import missingProfileImage from '../media/profile.png'
 import { useHistory } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react'
 import ApiContext from '../api/ApiContext'
@@ -49,7 +49,7 @@ const FeedHeader = ({ soul }) => {
 
     }, [])
 
-    useEffect(() => () => {
+    useEffect(() => {
         // Make sure to revoke the data uris to avoid memory leaks
         URL.revokeObjectURL(profilePic);
     }, [profilePic]);

@@ -1,4 +1,4 @@
-import missingProfileImage from '../media/missing-profile-picture.png'
+import missingProfileImage from '../media/profile.png'
 import {Dropdown} from 'react-bootstrap'
 import {useHistory, useParams} from 'react-router-dom';
 import { useState, useEffect, useContext} from 'react'
@@ -41,7 +41,7 @@ const Profile = ({soul}) => {
 
     }, [])
 
-    useEffect(() => () => {
+    useEffect(() => {
         // Make sure to revoke the data uris to avoid memory leaks
         URL.revokeObjectURL(profilePic);
     }, [profilePic]);

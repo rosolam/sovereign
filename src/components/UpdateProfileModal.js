@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { Modal, Form, Button } from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 import { useDropzone } from 'react-dropzone';
-import missingProfileImage from '../media/missing-profile-picture.png'
+import missingProfileImage from '../media/profile.png'
 
 const UpdateProfileModal = ({ show, onClose }) => {
 
@@ -23,9 +23,7 @@ const UpdateProfileModal = ({ show, onClose }) => {
         }
     });
 
-
-
-    useEffect(() => () => {
+    useEffect(() => {
         // Make sure to revoke the data uris to avoid memory leaks
         URL.revokeObjectURL(picture);
     }, [picture]);

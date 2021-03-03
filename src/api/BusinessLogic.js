@@ -3,7 +3,6 @@ import SEA from 'gun/sea'
 import IpfsProviderLocalNode from './IpfsProviders/IpfsProviderLocalNode'
 import IpfsProviderGateway from './IpfsProviders/IpfsProviderGateway'
 import IpfsProviderPinata from './IpfsProviders/IpfsProviderPinata'
-import { PictureAsPdfSharp } from '@material-ui/icons'
 import crypto from 'crypto'
 
 class BusinessLogic {
@@ -317,7 +316,7 @@ class BusinessLogic {
         
     }
 
-    async createPost(post, pictures){
+    async createPost(post, attachments){
         
         //create new post
         const created = new Date().getTime()
@@ -334,10 +333,28 @@ class BusinessLogic {
             this.gunAppRoot.get('profile').get('lastPost').put(postRef)
 
             //add attachments
-            if(pictures && pictures.length){
-                pictures.forEach(async pic => {
-                    const picHash = await this.ipfsProvider.putFile(pic)
-                    postRef.get('attachments').set(picHash)
+            if(attachments && attachments.length){
+                attachments.forEach(async attachment => {
+
+                    //what type of attachment?
+                    const attachmentNode = {}
+                    if(attachment.type == 'url'){
+                        attachmentNode.type = 'url'
+                        attachmentNode.url = attachment.url
+                    }else if(attachment.type.startsWith('image/')){
+                        attachmentNode.type = 'image'
+                    }else {
+                        attachmentNode.type = 'file'
+                    }
+                    
+                    //file to upload to ipfs?
+                    if(attachmentNode.type == 'file' || attachmentNode.type == 'image'){
+                        attachmentNode.ipfsHash = await this.ipfsProvider.putFile(attachment)
+                    }
+
+                    //add it to the attachments node
+                    postRef.get('attachments').set(attachmentNode)
+
                 });
             }
 
@@ -521,10 +538,13 @@ class BusinessLogic {
         this.gun.get(soul).get('attachments').map().on(
             async (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                const attachment = {
-                    mime: 'image/*',
-                    url: await this.getPicture(value)
+               
+                const attachment = {...value}
+                if(attachment.type == 'image'){
+                    const picUrl = await this.getPicture(attachment.ipfsHash)
+                    attachment.url = picUrl
                 }
+                
                 setAttachments(prevState => this.manageArrayState(prevState, attachment, key, 'key'))
             }
         )

@@ -1,4 +1,4 @@
-import missingProfileImage from '../media/missing-profile-picture.png'
+import missingProfileImage from '../media/profile.png'
 import loadingImageAnimation from '../media/loading-attachment.gif'
 import { Dropdown, Carousel } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
@@ -14,6 +14,15 @@ const Post = ({soul}) => {
     const [profile, setProfile] = useState({name:'loading...', picture:null})
 
     let eventUnSubs
+
+    const revokeObjectURLs = () => {
+        // Make sure to revoke the data uris to avoid memory leaks
+        attachments.forEach(attachment => {
+            if(attachment.type == 'image'){
+                URL.revokeObjectURL(attachment.url)
+            }
+        })
+    }
 
     useEffect(() => {
 
@@ -31,6 +40,7 @@ const Post = ({soul}) => {
             if(eventUnSubs){
                 eventUnSubs.forEach(u => u.off())
             }
+            return revokeObjectURLs();
         
         };
 
@@ -61,39 +71,23 @@ const Post = ({soul}) => {
 
     function ImageSpot(){
 
-        if(!attachments.length){
-            //no images
-            return(null);
-        }
+        if(attachments.length){
 
-        if(attachments.length == 1){
-
-            //single picture
             return (
-                <>
-                    {!attachments[0].isLoaded && <img className="img-fluid mx-auto d-block max-height-75" src={loadingImageAnimation}/>}
-                    <img src={attachments[0].url} className="img-fluid mx-auto d-block max-height-75" onLoad={() => { 
-                        if(!attachments[0].isLoaded){hideLoadingAnimation(attachments[0].key)}
-                    }} />
-                </>
-            );
-
-        } else {
-
-            //multiple pictures
-            return (
-                <Carousel className="bg-dark">
-                    {attachments.map((picture, index) => (
-                        <Carousel.Item key={index}>
-                            {!attachments[0].isLoaded && <img className="img-fluid mx-auto d-block max-height-75" src={loadingImageAnimation}/>}
-                            <img src={picture.url} className="img-fluid mx-auto d-block max-height-75" onLoad={() => { 
-                                if(!attachments[0].isLoaded){hideLoadingAnimation(picture.key)}
-                            }} />
-                        </Carousel.Item>
-                    ))}
+                <Carousel className="bg-dark" indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
+                {attachments.map((attachment, index) => (
+                    <Carousel.Item key={index}>
+                        <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
+                            {attachment.type == 'image' && <img src={attachment.url} className="img-fluid max-height-75 mx-auto d-block" />}
+                            {attachment.type == 'url' && <div style={{minHeight:'125px'}} ><LinkPreview previewUrl={attachment.url}/></div>}
+                            {attachment.type == 'file' && <div style={{minHeight:'125px'}} >todo: file attachment component</div>}
+                        </div>
+                    </Carousel.Item>
+                ))}
                 </Carousel>
             );
-        }
+
+        } else return(<></>)
 
     }
 
@@ -106,7 +100,7 @@ const Post = ({soul}) => {
                 <div className="d-flex m-1">
                     <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto', overflowWrap: 'anywhere', 'fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
                 </div>
-                <LinkPreview text={postRoot.text}/>
+                
                 <ImageSpot/>
                 
                 <div className="d-flex m-1">

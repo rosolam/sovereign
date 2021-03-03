@@ -1,4 +1,4 @@
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
+import ArrowBackIcon from '../media/back.png';
 import {useHistory} from 'react-router-dom';
 
 const BackArrow = ({path}) => {
@@ -12,7 +12,7 @@ const BackArrow = ({path}) => {
     }
     
     return (
-        <ArrowBackIcon style={{fontSize:'30px', height:'50px'}} onClick={onBackArrowClick}/>
+        <img src={ArrowBackIcon} height='50px' onClick={onBackArrowClick}/>
     )
 }
 
