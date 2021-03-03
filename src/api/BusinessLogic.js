@@ -4,6 +4,7 @@ import IpfsProviderLocalNode from './IpfsProviders/IpfsProviderLocalNode'
 import IpfsProviderGateway from './IpfsProviders/IpfsProviderGateway'
 import IpfsProviderPinata from './IpfsProviders/IpfsProviderPinata'
 import { PictureAsPdfSharp } from '@material-ui/icons'
+import crypto from 'crypto'
 
 class BusinessLogic {
     
@@ -15,6 +16,7 @@ class BusinessLogic {
     ipfsProvider;
     #eventUnSubs = [];
     #setLoggedIn
+    #newUser = false;
     userEncPair;
 
     constructor(gunPeer){
@@ -97,19 +99,18 @@ class BusinessLogic {
 
     }
 
-    createUser(user, password, name){
+    async createUser(user, password, name){
 
         console.log('create user request')
 
         //create
         this.gunUser.create(user, password, (ack) => {
 
-            this.gunAppRoot.get('profile').put({
-                name: name,
-                picture: '',
-                following: '',
-                posts: ''
-            })
+            //cache the new user data to create during the login auth even because we can't write to the user node at this point yet
+            this.#newUser = {name: name}
+
+            //call to log them in
+            this.login(user,password)
 
         })
 
@@ -122,6 +123,14 @@ class BusinessLogic {
         this.gun.on('auth', async (ack) => {
             
             console.log('login event', ack)
+
+            //finish creating a new user if a new user object exists
+            if(this.#newUser){
+                this.gunUser.get('sovereign').get('profile').put(this.#newUser)          
+                this.#newUser = false //wipe the new user so we don't run this again
+            }
+
+            //capture their logged in info
             this.isLoggedIn = true
             this.gunAppRoot = this.gunUser.get('sovereign')
             this.mySoul = this.gunUser['_'].soul
@@ -130,6 +139,7 @@ class BusinessLogic {
             //if we aren't connected to a local node, let's try to connect to pinata now
             if(!this.ipfsProvider.canPut){ await this.connectToPinata()} //await it to help ensure we connect before re-rendering
             
+            //call back to app to set state of logged in
             this.#setLoggedIn(true)
 
         })
@@ -214,7 +224,7 @@ class BusinessLogic {
     }
 
     isMine(soul){
-        return this.parseUserFromSoul(soul) == this.gunUser['_'].soul
+        return this.parseUserFromSoul(soul) == this.mySoul
     }
 
     getMaxTimeStampOfNode(value){
@@ -311,7 +321,7 @@ class BusinessLogic {
         
         //create new post
         const created = new Date().getTime()
-        const key = created + '_' + this.mySoul
+        const key = crypto.randomBytes(20).toString('hex')
         this.gunAppRoot.get('posts').get(key).put({
             text: post.text,
             created: created,

@@ -10,7 +10,7 @@ const Settings = () => {
     
     return (
         <>
-            <Header back={headerBack} label={headerLabel} navs={headerNavs}/>            
+            <Header back={headerBack} label={headerLabel} navs={headerNavs}/> 
             <IpfsSettings/>
         </>
     )

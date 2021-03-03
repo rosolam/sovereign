@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext} from 'react'
-import { BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
+import { BrowserRouter, HashRouter, Redirect, Route, Switch} from 'react-router-dom'
 import ApiContext from "./api/ApiContext"
 import './App.css'
 import Login from './pages/Login'
@@ -8,7 +8,7 @@ import Settings from './pages/Settings'
 import Feed from './pages/Feed'
 
 
-const App = ({baseUrl}) => {
+const App = () => {
 
   const [isLoggedIn, setLoggedIn] = useState(false)
   const apiContext = useContext(ApiContext)
@@ -29,7 +29,7 @@ const App = ({baseUrl}) => {
   }, []);
 
   return (
-      <BrowserRouter basename={baseUrl + '/sovereign'}>
+      <HashRouter>
         <Switch>
           {isLoggedIn && 
             <>
@@ -44,7 +44,7 @@ const App = ({baseUrl}) => {
             <Route path="*" component={Login}/>
           }
         </Switch>
-      </BrowserRouter>
+      </HashRouter>
   )
 
 }

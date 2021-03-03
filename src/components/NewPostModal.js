@@ -2,6 +2,7 @@ import {useState, useContext, useEffect} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 import { useDropzone } from 'react-dropzone';
+import LinkPreview from './LinkPreview'
 
 const NewPostModal = ({show, onClose}) => {
 
@@ -25,9 +26,9 @@ const NewPostModal = ({show, onClose}) => {
       ));
     
     useEffect(() => () => {
-    // Make sure to revoke the data uris to avoid memory leaks
-    files.forEach(file => URL.revokeObjectURL(file.preview));
-    }, [files]);
+        // Make sure to revoke the data uris to avoid memory leaks
+        files.forEach(file => URL.revokeObjectURL(file.preview));
+        }, [files]);
 
     const handleSubmit = (e) => {
         
@@ -51,7 +52,7 @@ const NewPostModal = ({show, onClose}) => {
         onClose()
 
     } 
-  
+ 
     const dropZone = 
         <div {...getRootProps()} className='dropzone'>
             <input {...getInputProps()} />
@@ -69,6 +70,7 @@ const NewPostModal = ({show, onClose}) => {
                     <Form.Group controlId="formBasicEmail">
                         <Form.Label>Post</Form.Label>
                         <Form.Control as='textarea' rows='5' placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
+                        <LinkPreview text={text}/>
                     </Form.Group>
                     <Form.Group controlId="formPictures">
                         <Form.Label>Pictures</Form.Label>

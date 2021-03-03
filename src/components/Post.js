@@ -2,6 +2,7 @@ import missingProfileImage from '../media/missing-profile-picture.png'
 import loadingImageAnimation from '../media/loading-attachment.gif'
 import { Dropdown, Carousel } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
+import LinkPreview from './LinkPreview'
 import ApiContext from '../api/ApiContext'
 
 const Post = ({soul}) => {
@@ -105,7 +106,7 @@ const Post = ({soul}) => {
                 <div className="d-flex m-1">
                     <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto', overflowWrap: 'anywhere', 'fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
                 </div>
-
+                <LinkPreview text={postRoot.text}/>
                 <ImageSpot/>
                 
                 <div className="d-flex m-1">

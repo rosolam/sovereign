@@ -28,10 +28,7 @@ const Login = () => {
         
         //login
         apiContext.businessLogic.login(username,password,false)
-
-        //redirect to home
-        history.push('/')
-    
+   
     } 
 
     const handleCreate = (e) => {
@@ -45,12 +42,8 @@ const Login = () => {
         }
         
         //create
-        console.log(apiContext)
         apiContext.businessLogic.createUser(username,password,name)
-
-        //redirect to home
-        history.push('/')
-    
+   
     } 
 
     return (
