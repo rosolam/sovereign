@@ -1,6 +1,5 @@
 import { Navbar, Nav, NavDropdown } from 'react-bootstrap'
 import { Link } from "react-router-dom"
-import missingProfileImage from '../media/profile.png'
 import { useHistory } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react'
 import ApiContext from '../api/ApiContext'
@@ -9,6 +8,7 @@ import NewPostModal from './NewPostModal'
 import UpdateProfileModal from './UpdateProfileModal'
 import FollowModal from './FollowModal'
 import AddressModal from './AddressModal'
+import ProfilePic from './ProfilePic'
 
 const FeedHeader = ({ soul }) => {
 
@@ -70,7 +70,7 @@ const FeedHeader = ({ soul }) => {
                 <Navbar.Brand href="#" className='d-flex m-0 mr-1' >
                     <BackArrow path='/Following' />
                     <div className="d-flex" onClick={onProfileClick}>
-                        <img className="m-1 circle-image" height="50" width="50" src={profilePic ? profilePic : 'missing'} onError={(e) => { e.target.onerror = null; e.target.src = missingProfileImage }} />
+                        <ProfilePic src={profilePic}/>
                         <div className='m-1 d-flex flex-wrap align-content-center' style={{ fontWeight: 700, width:'130px', fontSize: '15px', whiteSpace:'normal', overflowWrap:'anywhere'}}>{profile.name}</div>
                     </div>  
                 </Navbar.Brand>

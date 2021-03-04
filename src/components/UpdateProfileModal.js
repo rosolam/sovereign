@@ -1,8 +1,8 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect, useContext, useRef} from 'react'
 import { Modal, Form, Button } from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
-import { useDropzone } from 'react-dropzone';
-import missingProfileImage from '../media/profile.png'
+import ProfilePic from './ProfilePic'
+import { BsPersonSquare} from "react-icons/bs"
 
 const UpdateProfileModal = ({ show, onClose }) => {
 
@@ -11,22 +11,48 @@ const UpdateProfileModal = ({ show, onClose }) => {
     const [name, setName] = useState('')
     const [picture, setPicture] = useState('')
     const [file, setFile] = useState();
-
-    const { acceptedFiles, getRootProps, getInputProps } = useDropzone({
-        accept: 'image/*',
-        onDrop: acceptedFiles => {
-
-            //only accept first file
-            const file = acceptedFiles[0]
-            setPicture(URL.createObjectURL(file))
-
-        }
-    });
+    const fileUploadRef = useRef(null);
 
     useEffect(() => {
+
+        if(show){
+
+            console.log('setting profile event handler')
+            apiContext.businessLogic.subscribeProfile(
+                false,
+                (profile) => {setName(profile.name)},
+                setPicture,
+                false,
+                false,
+                false,
+                true
+            )
+
+            return () => {
+                
+                // Make sure to revoke the data uris to avoid memory leaks
+                if(picture){
+                    URL.revokeObjectURL(picture)
+                }
+            
+            }
+
+        }
+
+    }, [show])
+
+    const handleFileChange = (e) => {
+
         // Make sure to revoke the data uris to avoid memory leaks
-        URL.revokeObjectURL(picture);
-    }, [picture]);
+        if(picture){
+            URL.revokeObjectURL(picture);
+        }
+
+        //capture file and preview
+        setFile(e.target.files[0])
+        setPicture(URL.createObjectURL(e.target.files[0]))
+
+    }
 
     const handleSubmit = (e) => {
 
@@ -41,30 +67,12 @@ const UpdateProfileModal = ({ show, onClose }) => {
         //update profile
         apiContext.businessLogic.updateProfile({
             name: name
-        }, acceptedFiles[0])
+        }, file)
 
         //close
         onClose()
 
     }
-
-    const loadProfile = (profile) => {
-        setName(profile ? profile.name : '')
-        setPicture(profile ? profile.name : '')
-    }
-
-    useEffect(() => {
-        apiContext.businessLogic.getProfile(null, loadProfile)
-    }, [])
-
-    const dropZone = 
-        <div {...getRootProps()} className='ml-3 dropzone'>
-            <input {...getInputProps()} />
-            <p>Drag 'n' drop some files here, or click to select files</p>
-        </div>
-
-    const setupIpfs = 
-        <div className='mx-4'>Note: You are unable to upload a profile picture at this time.  Please setup an IPFS service in Settings to enable distributed file sharing.</div>
 
     return (
         <>
@@ -78,14 +86,18 @@ const UpdateProfileModal = ({ show, onClose }) => {
                         <Form.Control type="text" placeholder="your name..." value={name} onChange={(e) => setName(e.target.value)} />
                     </Form.Group>
                     <Form.Group controlId="formPicture">
+                        <Form.File ref={fileUploadRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleFileChange(e,)}/>
                         <Form.Label>Picture</Form.Label>
                         <div className='d-flex'>
-                                <img src={picture} style={{ width: '75px', height: '75px' }} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}}  />
-
-                                {apiContext.businessLogic.ipfsProvider.canPut && dropZone}
-                                {!apiContext.businessLogic.ipfsProvider.canPut && setupIpfs}
-                                
-
+                                <ProfilePic src={picture} size='75px'/>
+                                {apiContext.businessLogic.ipfsProvider.canPut && 
+                                    <Button variant="primary" className='m-3' onClick={() => {fileUploadRef.current.click();}}><BsPersonSquare/> Upload</Button>
+                                }
+                                {!apiContext.businessLogic.ipfsProvider.canPut && 
+                                    <div className='mx-4'>
+                                        Note: You are unable to upload a profile picture at this time.  Please setup an IPFS service in Settings to enable distributed file sharing.
+                                    </div>
+                                }
                         </div>
                     </Form.Group>
                 </Modal.Body>

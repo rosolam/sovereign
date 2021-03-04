@@ -1,18 +1,18 @@
-import ArrowBackIcon from '../media/back.png';
+import { BsArrowLeft } from "react-icons/bs"
 import {useHistory} from 'react-router-dom';
 
-const BackArrow = ({path}) => {
+const BackArrow = (props) => {
 
     const history = useHistory();
 
     
     const onBackArrowClick = (e) => { 
         e.preventDefault()
-        history.push(path);
+        history.push(props.path);
     }
     
     return (
-        <img src={ArrowBackIcon} height='50px' onClick={onBackArrowClick}/>
+        <BsArrowLeft  style={{height:props.size || '50px',width:props.size || '50px'}}  onClick={onBackArrowClick}/>
     )
 }
 

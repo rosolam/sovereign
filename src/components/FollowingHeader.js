@@ -32,7 +32,7 @@ const FollowingHeader = () => {
       <AddressModal show={addressModal} onClose={() => { setAddressModal(false) }} soul={apiContext.businessLogic.mySoul} />
 
       <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
-        <Navbar.Brand href="#home"><div className='d-flex flex-column justify-content-center' style={{height:'50px'}}>Sovereign</div></Navbar.Brand>
+        <Navbar.Brand href="#"><div className='d-flex flex-column justify-content-center' style={{height:'50px'}}>Sovereign</div></Navbar.Brand>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="ml-auto">

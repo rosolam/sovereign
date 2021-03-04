@@ -1,5 +1,4 @@
-import missingProfileImage from '../media/profile.png'
-import {Dropdown} from 'react-bootstrap'
+import ProfilePic from './ProfilePic'
 import {useHistory, useParams} from 'react-router-dom';
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
@@ -71,7 +70,7 @@ const Profile = ({soul}) => {
 
     return (
         <div className="profile d-flex" onClick={onProfileClick}>
-            <img className="m-1 circle-image" height="50" width="50" src={profilePic ? profilePic : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} />
+            <ProfilePic src={profilePic}/>
             <div className="d-flex flex-column flex-grow-1">
                 <div className="d-flex flex-fill">
                     <div style={{fontWeight:700, fontSize:'20px'}}>{profile.name}</div>

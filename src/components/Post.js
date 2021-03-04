@@ -1,5 +1,4 @@
-import missingProfileImage from '../media/profile.png'
-import loadingImageAnimation from '../media/loading-attachment.gif'
+import ProfilePic from './ProfilePic'
 import { Dropdown, Carousel } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import LinkPreview from './LinkPreview'
@@ -63,7 +62,7 @@ const Post = ({soul}) => {
     function ProfileHeader(){
         return (
             <div className="d-flex">
-                <div><img className="m-1 rounded-corners" height="40" width="40" src={profile ? profile.picture : 'missing'} onError={(e)=>{e.target.onerror = null; e.target.src=missingProfileImage}} /></div>
+                <div><ProfilePic src={profile.picture} size={40}/></div>
                 <div className="align-self-center" style={{'fontWeight':700, 'fontSize':'20px'}}>{profile ? profile.name : 'loading...'}</div>
             </div>
         );

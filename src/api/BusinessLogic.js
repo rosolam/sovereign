@@ -416,7 +416,7 @@ class BusinessLogic {
         
     }
 
-    async subscribePosts(setPosts, soul, unSubs){
+    async subscribePosts(setPosts, soul, unSubs, once){
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
@@ -428,6 +428,7 @@ class BusinessLogic {
             this.gun.get(soul).get('sovereign').get('posts').map().on(
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
                 }
             )  
@@ -438,6 +439,7 @@ class BusinessLogic {
             this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
                 }
             )       
@@ -446,6 +448,7 @@ class BusinessLogic {
             this.gunAppRoot.get('following').map().get('user').get('sovereign').get('posts').map().on(
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
                 }
             )                
@@ -475,8 +478,11 @@ class BusinessLogic {
 
     }
 
-    async subscribeProfile(soul, setProfile, setProfilePic, setFollowing, setLastPost, unSubs){
+    async subscribeProfile(soul, setProfile, setProfilePic, setFollowing, setLastPost, unSubs, once){
 
+        //default soul to the user's
+        soul = soul ? soul : this.mySoul;
+console.log(soul)
         //track events to unsub
         unSubs = unSubs ? unSubs : []
         
@@ -485,14 +491,18 @@ class BusinessLogic {
             this.gun.get(soul).get('sovereign').get('profile').on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setProfile({...value})
                 }
             )
         }
+
+        //get profile picture
         if(setProfilePic){
             this.gun.get(soul).get('sovereign').get('profile').get('picture').on(
                 async(value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setProfilePic(await this.getPicture(value))
                     console.log('set profile pic event')
                 }
@@ -504,6 +514,7 @@ class BusinessLogic {
             this.gunAppRoot.get('following').get(soul).on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setFollowing({...value}) 
                 }
             )   
@@ -514,6 +525,7 @@ class BusinessLogic {
             this.gun.get(soul).get('sovereign').get('profile').get('lastPost').on(
                 (value, key, _msg, _ev) => {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
                     setLastPost({...value})
                 }
             )
