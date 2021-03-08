@@ -40,7 +40,7 @@ const FollowingHeader = () => {
             <Nav.Link href="#" onClick={() => {setFollowModal(true)}}>Follow Someone</Nav.Link>
             <Nav.Link href="#" onClick={() => { setAddressModal(true) }}>Share My Address</Nav.Link>
             <Nav.Link href="#" onClick={() => {setMyProfileModal(true)}}> Update My Profile</Nav.Link>
-            <Nav.Link as={Link} to="/settings">Settings</Nav.Link>
+            <Nav.Link as={Link} to="/settings/basic">Settings</Nav.Link>
             <Nav.Link href="#" onClick={handleLogout}>Logout</Nav.Link>
           </Nav>
         </Navbar.Collapse>

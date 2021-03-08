@@ -2,6 +2,7 @@ class IpfsProviderGateway {
 
     canPut = false;
     canGet = true;
+    name = 'ipfs gateway';
     connectionStatus ={ connect: true, error: '' };
     #gateway
     
@@ -16,7 +17,7 @@ class IpfsProviderGateway {
 
         this.#gateway = options.gateway
 
-        return
+        return this.connectionStatus
     }
 
     async getFile(hash) {

@@ -36,7 +36,7 @@ const App = () => {
               <Route path="/" exact><Redirect to="/following" /></Route>
               <Route path="/following" component={Following} />
               <Route path="/feed/:soul" component={Feed} />
-              <Route path="/settings" component={Settings} />
+              <Route path="/settings/:setting" component={Settings} />
               <Route path="*"><Redirect to="/following" /></Route>
             </>
           }

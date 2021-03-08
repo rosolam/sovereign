@@ -3,6 +3,7 @@ class IpfsProviderInterface{
     canPut = false;
     canGet = false;
     connectionStatus;
+    name = 'ipfs interface';
 
     constructor(options){
     }

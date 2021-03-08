@@ -1,12 +1,12 @@
 import {Navbar, Nav} from 'react-bootstrap'
 import BackArrow from './BackArrow'
 
-const Header = ({back,label, navs}) => {
+const Header = ({showBack, backPath, label,subLabel, navs}) => {
     return (
         <Navbar sticky="top" collapseOnSelect expand="lg" bg="dark" variant="dark">
         <Navbar.Brand href="#" className='d-flex m-0 mr-1 align-items-center' >
-            {back && <BackArrow path={back} />}
-            <div className="ml-2">{label}</div>
+            {showBack && <BackArrow path={backPath} />}
+            <div className="ml-2 d-flex flex-column"><div>{label}</div><div className='small'>{subLabel}</div></div>
         </Navbar.Brand>
         {navs && 
             <>

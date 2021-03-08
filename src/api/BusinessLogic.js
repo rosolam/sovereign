@@ -3,6 +3,8 @@ import SEA from 'gun/sea'
 import IpfsProviderLocalNode from './IpfsProviders/IpfsProviderLocalNode'
 import IpfsProviderGateway from './IpfsProviders/IpfsProviderGateway'
 import IpfsProviderPinata from './IpfsProviders/IpfsProviderPinata'
+import PreviewProviderLinkPreview from './PreviewProviders/PreviewProviderLinkPreview'
+import PreviewProviderNone from './PreviewProviders/PreviewProviderNone'
 import crypto from 'crypto'
 
 class BusinessLogic {
@@ -13,6 +15,7 @@ class BusinessLogic {
     gunAppRoot;
     mySoul;
     ipfsProvider;
+    linkPreviewProvider;
     #eventUnSubs = [];
     #setLoggedIn
     #newUser = false;
@@ -28,12 +31,13 @@ class BusinessLogic {
         this.gunUser = this.gun.user()
 
         //setup default ipfs gateway provider while we attempt to use local ipfs node
-        this.ipfsProvider = new IpfsProviderGateway()
-        this.ipfsProvider.connect()
+        this.enableIpfs('gateway')
+        this.enableIpfs('local')
 
-        this.checkForLocaLIpfsNode()
-        
-        console.log('constructed')
+        //setup default link preview provider
+        this.enableLinkPreview('none')
+
+        console.log('business logic constructed')
 
     }
     
@@ -53,47 +57,99 @@ class BusinessLogic {
         return await this.gunAppRoot.get('settings').get(name).put(encValue).then()
     }
 
-    async connectToPinata(){
+    async enableIpfs(provider){
 
-        //get keys
-        const pinataApiKey = await this.getSetting('pinataApiKey')
-        const pinataApiSecret = await this.getSetting('pinataApiSecret')
+        let ipfs
+        let result
 
-        //keys exist?
-        if(!pinataApiKey || !pinataApiSecret){
-            console.log('no pinata keys found')
-            return false
+        switch (provider) {
+            case 'local':
+                console.log('attemping to connect to local IPFS node')
+                ipfs = new IpfsProviderLocalNode()
+                result = await ipfs.connect()
+                break;
+            
+            case 'pinata':
+            
+                console.log('attemping to connect to local IPFS node')
+                //get keys
+                const pinataApiKey = await this.getSetting('pinataApiKey')
+                const pinataApiSecret = await this.getSetting('pinataApiSecret')
+
+                //keys exist?
+                if(!pinataApiKey || !pinataApiSecret){
+                    console.log('no pinata keys found')
+                    return false
+                }
+
+                //connect
+                ipfs = new IpfsProviderPinata()
+                result = await ipfs.connect({
+                    pinataApiKey: pinataApiKey,
+                    pinataSecretApiKey: pinataApiSecret
+                })
+
+                break;
+                
+            default:
+                
+                //default gateway
+                console.log('connecting to default gateway IPFS provider')
+                ipfs = new IpfsProviderGateway()
+                result = await ipfs.connect()
+                break;
         }
-
-        //connect
-        const ipfs = new IpfsProviderPinata()
-        const result = await ipfs.connect({
-            pinataApiKey: pinataApiKey,
-            pinataSecretApiKey: pinataApiSecret
-        })
-        console.log('ipfs pinata status',result)
-
+                        
         //change to this provider if connected
         if(result.connect){
-            console.log('connected to local ipfs node')    
+            console.log('connected to ipfs provider:', ipfs.name)    
             this.ipfsProvider = ipfs
             return true
-        } else{
+        } else {
+            console.log('could not connect to ipfs provider:', ipfs.name)    
             return false
         }
 
     }
 
-    async checkForLocaLIpfsNode(){
+    async enableLinkPreview(provider){
+
+        let preview;
+        let result;
+        switch (provider) {
+            case 'linkpreview.net':
+                console.log('attemping to connect to linkpreview.net')
+                //get keys
+                const apiKey = await this.getSetting('linkPreviewNetApiKey')
+                
+                //keys exist?
+                if(!apiKey){
+                    console.log('no api keys found')
+                    return false
+                }
+
+                //connect
+                preview = new PreviewProviderLinkPreview()
+                result = await preview.connect({
+                    apiKey: apiKey
+                })
+                break;
         
-        const ipfs = new IpfsProviderLocalNode()
-        const result = await ipfs.connect()
-        console.log('ipfs local node status',result)
+            default:
+                //default (no preview) provider
+                preview = new PreviewProviderNone()
+                result = await preview.connect()
+                break;
+        }
 
         //change to this provider if connected
         if(result.connect){
-            console.log('connected to local ipfs node')    
-            this.ipfsProvider = ipfs
+            console.log('connected to preview provider:', preview.name)    
+            this.linkPreviewProvider = preview
+            return true
+        } else {
+            console.log('could not connect to preview provider:', preview.name)       
+            return false
         }
 
     }
@@ -136,8 +192,11 @@ class BusinessLogic {
             this.userEncPair = ack.sea
             
             //if we aren't connected to a local node, let's try to connect to pinata now
-            if(!this.ipfsProvider.canPut){ await this.connectToPinata()} //await it to help ensure we connect before re-rendering
-            
+            if(!this.ipfsProvider.canPut){ await this.enableIpfs('pinata')} //await it to help ensure we connect before re-rendering
+
+            //if we aren't connected to a preview provider let's try to connect to linkpreview.net
+            if(!this.ipfsProvider.canPreview){ await this.enableLinkPreview('linkpreview.net')} //await it to help ensure we connect before re-rendering
+                        
             //call back to app to set state of logged in
             this.#setLoggedIn(true)
 
@@ -337,23 +396,25 @@ class BusinessLogic {
                 attachments.forEach(async attachment => {
 
                     //what type of attachment?
-                    const attachmentNode = {}
+                    let attachmentNode = {}
                     if(attachment.type == 'url'){
-                        attachmentNode.type = 'url'
-                        attachmentNode.url = attachment.url
+                        attachmentNode = {...attachment}
                     }else if(attachment.type.startsWith('image/')){
-                        attachmentNode.type = 'image'
+                        attachmentNode = {
+                            key: attachment.key,
+                            type: 'image',
+                            ipfsHash: await this.ipfsProvider.putFile(attachment)
+                        }
                     }else {
-                        attachmentNode.type = 'file'
+                        attachmentNode = {
+                            key: attachment.key,
+                            type: 'file',
+                            ipfsHash: await this.ipfsProvider.putFile(attachment)
+                        }
                     }
                     
-                    //file to upload to ipfs?
-                    if(attachmentNode.type == 'file' || attachmentNode.type == 'image'){
-                        attachmentNode.ipfsHash = await this.ipfsProvider.putFile(attachment)
-                    }
-
                     //add it to the attachments node
-                    postRef.get('attachments').set(attachmentNode)
+                    postRef.get('attachments').get(attachmentNode.key).put(attachmentNode)
 
                 });
             }
@@ -569,6 +630,10 @@ console.log(soul)
             }
         )
 
+    }
+
+    async getPreview(url){
+        return this.linkPreviewProvider.getPreview(url)
     }
 
 }

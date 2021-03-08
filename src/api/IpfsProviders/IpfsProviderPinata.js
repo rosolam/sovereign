@@ -6,6 +6,7 @@ class IpfsProviderPinata {
     canGet = false;
     connectionStatus;
     #options
+    name = 'pinata';
 
     constructor(options) {
     }

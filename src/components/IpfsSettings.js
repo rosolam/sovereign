@@ -34,17 +34,17 @@ const IpfsSettings = () => {
 
                 <Tabs defaultActiveKey="about">
 
-                    <Tab eventKey="about" title="About" className="border border-top-0 p-3 scrolling-wrapper" style={{ height: '75vh' }}  >
+                    <Tab eventKey="about" title="What is this?" className="border border-top-0 p-3 scrolling-wrapper" style={{ height: '75vh' }}  >
                         <div className='scrolling-content m-1' >
-                            <p>TLDR; To upload files, install IPFS on the computer you are browsing from or enter your Pinata API Keys on the next tab.</p>
+                            <br/><p><b>TLDR; To upload pictures and files, <a href='https://github.com/ipfs-shipyard/ipfs-desktop' target='_new'>install IPFS</a> on the computer you are browsing from or please create a free acccount on <a href='https://pinata.cloud/' target='_new'>Pinata</a> and enter your API Key on the next tab.</b></p>
                             <hr></hr>
-                            <p>Since this is a distributed application a special method is needed to share files in a secure, distributed and uncesorable manner.  Let me introduce you to the <a href='https://ipfs.io/' target='_new'>Interplanetary File System (IPFS)</a>!</p>
-                            <p>You can use your <b>own</b> IPFS node by <a href='https://github.com/ipfs-shipyard/ipfs-desktop' target='_new'>installing IPFS</a> on the desktop you are using to view this site right now; it will automatically be found and used by Sovereign!</p>
-                            <p>Without your own node, or on a mobile device that isn't conducive to hosting a node, we need someone to add your files into IPFS for you.  Fortunately there are some options, like <a href='https://pinata.cloud/' target='_new'>Pinata</a> that do just this!</p>
-                            <p>Sign up for a free account with them (1gb of storage for free), create an Admin API Key and enter the key codes on the next tab to enable file uploads!</p>
+                            <p className='small'>Since this is a distributed application a special method is needed to share files in a secure, distributed and uncesorable manner.  Let me introduce you to the <a href='https://ipfs.io/' target='_new'>Interplanetary File System (IPFS)</a>!</p>
+                            <p className='small'>You can use your <b>own</b> IPFS node by <a href='https://github.com/ipfs-shipyard/ipfs-desktop' target='_new'>installing IPFS</a> on the desktop you are using to view this site right now; it will automatically be found and used by Sovereign!</p>
+                            <p className='small'>Without your own node, or on a mobile device that isn't conducive to hosting a node, we need someone to add your files into IPFS for you.  Fortunately there are some options, like <a href='https://pinata.cloud/' target='_new'>Pinata</a> that do just this!</p>
+                            <p className='small'>Sign up for a free account with them (1gb of storage for free), create an Admin API Key and enter the key codes on the next tab to enable file uploads!</p>
                         </div>
                     </Tab>
-                    <Tab eventKey="pinata" title="Pinata" className="border border-top-0 p-3">
+                    <Tab eventKey="pinata" title="Pinata Keys" className="border border-top-0 p-3">
                         <Form.Group controlId="formPinataKey">
                             <Form.Label>API Key</Form.Label>
                             <Form.Control type="text" placeholder="0skl3332nkl43n4nx21d" value={pinataKey} onChange={(e) => setPinataKey(e.target.value)}/>

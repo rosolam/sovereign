@@ -4,6 +4,7 @@ class IpfsProviderLocalNode {
 
     canPut = false;
     canGet = false;
+    name = 'local node';
     connectionStatus;
     #ipfs
     

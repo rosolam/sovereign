@@ -8,7 +8,13 @@ const BackArrow = (props) => {
     
     const onBackArrowClick = (e) => { 
         e.preventDefault()
-        history.push(props.path);
+
+        //if an explicit path was provided to go back to use it otherwise use history to go back
+        if(props.path){
+            history.push(props.path);
+        } else {
+            history.goBack();
+        }
     }
     
     return (

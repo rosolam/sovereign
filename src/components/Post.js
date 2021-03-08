@@ -1,5 +1,5 @@
 import ProfilePic from './ProfilePic'
-import { Dropdown, Carousel } from 'react-bootstrap'
+import { Dropdown, Carousel, Spinner } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import LinkPreview from './LinkPreview'
 import ApiContext from '../api/ApiContext'
@@ -45,20 +45,6 @@ const Post = ({soul}) => {
 
     }, [])
 
-    const hideLoadingAnimation = (key) => {
-
-        setAttachments( (prevState) => {
-
-            //get item
-            const existingItem = prevState.find((p) => p.key == key)
-            const updatedItem = {...existingItem}
-            updatedItem.isLoaded = true
-            return ([...prevState.filter(p => p.key !== key),updatedItem].sort((a, b) => {  return b['key'] - a['key'] }))
-
-        })
-
-    }
-
     function ProfileHeader(){
         return (
             <div className="d-flex">
@@ -68,7 +54,7 @@ const Post = ({soul}) => {
         );
     }
 
-    function ImageSpot(){
+    function AttachmentCarousel(){
 
         if(attachments.length){
 
@@ -76,9 +62,9 @@ const Post = ({soul}) => {
                 <Carousel className="bg-dark" indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
                 {attachments.map((attachment, index) => (
                     <Carousel.Item key={index}>
-                        <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
-                            {attachment.type == 'image' && <img src={attachment.url} className="img-fluid max-height-75 mx-auto d-block" />}
-                            {attachment.type == 'url' && <div style={{minHeight:'125px'}} ><LinkPreview previewUrl={attachment.url}/></div>}
+                        <div className="d-flex p-2 justify-content-center align-items-center">
+                            {attachment.type == 'image' && <><img src={attachment.url} className="img-fluid max-height-75 mx-auto d-block" /></>}
+                            {attachment.type == 'url' && <LinkPreview attachment={attachment}/>}
                             {attachment.type == 'file' && <div style={{minHeight:'125px'}} >todo: file attachment component</div>}
                         </div>
                     </Carousel.Item>
@@ -100,7 +86,7 @@ const Post = ({soul}) => {
                     <div className="flex-grow-1" style={{'maxHeight':'50vh', overflow: 'auto', overflowWrap: 'anywhere', 'fontWeight':700, 'fontSize':'15px'}}>{postRoot.text}</div>
                 </div>
                 
-                <ImageSpot/>
+                <AttachmentCarousel/>
                 
                 <div className="d-flex m-1">
                     <div style={{'fontWeight':700, 'fontSize':'10px'}}>{Date(postRoot.created)}</div>
