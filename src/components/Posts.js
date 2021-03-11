@@ -13,7 +13,7 @@ const Posts = ({soul}) => {
 
         console.log('setting posts event handler')
         
-        apiContext.businessLogic.subscribePosts(setPosts, soul, eventUnSubs)
+        apiContext.businessLogic.subscribePosts( soul, setPosts, eventUnSubs)
   
         return () => {
 
@@ -30,7 +30,7 @@ const Posts = ({soul}) => {
         <div className="scrolling-wrapper">
             <div className="scrolling-content">
                 {posts.map((post) => (
-                    <Post soul={post['_']['#']} key={post.key}/>
+                    <Post soul={post['_']['#']} decryptionKey={post.decryptionKey} key={post.key}/>
                 ))}
             </div>
         </div>

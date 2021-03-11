@@ -1,11 +1,11 @@
 import {useState, useContext} from 'react'
 import {Navbar, Nav, NavDropdown} from 'react-bootstrap'
-import FollowModal from './FollowModal'
-import NewPostModal from './NewPostModal'
-import UpdateProfileModal from './UpdateProfileModal'
+import FollowUser from '../modals/FollowUser'
+import CreatePost from '../modals/CreatePost'
+import EditProfile from '../modals/EditProfile'
 import ApiContext from '../api/ApiContext'
 import {useHistory} from 'react-router-dom';
-import AddressModal from './AddressModal'
+import UserAddress from '../modals/UserAddress'
 import { Link} from "react-router-dom";
 
 const FollowingHeader = () => {
@@ -26,10 +26,10 @@ const FollowingHeader = () => {
   return (
     <>
       
-      <FollowModal show={followModal} onClose={() => {setFollowModal(false)}}/>
-      <UpdateProfileModal show={myProfileModal} onClose={() => {setMyProfileModal(false)}}/>
-      <NewPostModal show={postModal} onClose={() => {setPostModal(false)}}/>
-      <AddressModal show={addressModal} onClose={() => { setAddressModal(false) }} soul={apiContext.businessLogic.mySoul} />
+      <FollowUser show={followModal} onClose={() => {setFollowModal(false)}}/>
+      <EditProfile show={myProfileModal} onClose={() => {setMyProfileModal(false)}}/>
+      <CreatePost show={postModal} onClose={() => {setPostModal(false)}}/>
+      <UserAddress show={addressModal} onClose={() => { setAddressModal(false) }} soul={apiContext.businessLogic.mySoul} />
 
       <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
         <Navbar.Brand href="#"><div className='d-flex flex-column justify-content-center' style={{height:'50px'}}>Sovereign</div></Navbar.Brand>

@@ -1,15 +1,15 @@
 import { useState, useEffect, useContext, useRef} from 'react'
 import { Modal, Form, Button } from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
-import ProfilePic from './ProfilePic'
+import ProfilePic from '../components/ProfilePic'
 import { BsPersonSquare} from "react-icons/bs"
 
-const UpdateProfileModal = ({ show, onClose }) => {
+const EditProfile = ({ show, onClose }) => {
 
     const apiContext = useContext(ApiContext)
 
     const [name, setName] = useState('')
-    const [picture, setPicture] = useState('')
+    const [profilePic, setProfilePic] = useState('')
     const [file, setFile] = useState();
     const fileUploadRef = useRef(null);
 
@@ -17,22 +17,15 @@ const UpdateProfileModal = ({ show, onClose }) => {
 
         if(show){
 
-            console.log('setting profile event handler')
-            apiContext.businessLogic.subscribeProfile(
-                false,
-                (profile) => {setName(profile.name)},
-                setPicture,
-                false,
-                false,
-                false,
-                true
-            )
+            console.log('fetching my profile')
+            apiContext.businessLogic.subscribeProfile(null,(profile) => {setName(profile.name)}, null, true)
+            apiContext.businessLogic.subscribeProfilePic(null,setProfilePic, null, true)
 
             return () => {
                 
                 // Make sure to revoke the data uris to avoid memory leaks
-                if(picture){
-                    URL.revokeObjectURL(picture)
+                if(profilePic){
+                    URL.revokeObjectURL(profilePic)
                 }
             
             }
@@ -44,13 +37,13 @@ const UpdateProfileModal = ({ show, onClose }) => {
     const handleFileChange = (e) => {
 
         // Make sure to revoke the data uris to avoid memory leaks
-        if(picture){
-            URL.revokeObjectURL(picture);
+        if(profilePic){
+            URL.revokeObjectURL(profilePic);
         }
 
         //capture file and preview
         setFile(e.target.files[0])
-        setPicture(URL.createObjectURL(e.target.files[0]))
+        setProfilePic(URL.createObjectURL(e.target.files[0]))
 
     }
 
@@ -89,7 +82,7 @@ const UpdateProfileModal = ({ show, onClose }) => {
                         <Form.File ref={fileUploadRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleFileChange(e,)}/>
                         <Form.Label>Picture</Form.Label>
                         <div className='d-flex'>
-                                <ProfilePic src={picture} size='75px'/>
+                                <ProfilePic src={profilePic} size='75px'/>
                                 {apiContext.businessLogic.ipfsProvider.canPut && 
                                     <Button variant="primary" className='m-3' onClick={() => {fileUploadRef.current.click();}}><BsPersonSquare/> Upload</Button>
                                 }
@@ -111,4 +104,4 @@ const UpdateProfileModal = ({ show, onClose }) => {
     );
 }
 
-export default UpdateProfileModal
+export default EditProfile

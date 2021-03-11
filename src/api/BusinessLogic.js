@@ -19,7 +19,8 @@ class BusinessLogic {
     #eventUnSubs = [];
     #setLoggedIn
     #newUser = false;
-    userEncPair;
+    userSEAPair;
+    sea;
 
     constructor(gunPeer){
 
@@ -29,6 +30,9 @@ class BusinessLogic {
         }
         this.gun = Gun(gunPeer ? gunPeer : "https://dev.rosolalaboratories.com:4000/gun")
         this.gunUser = this.gun.user()
+
+        //for testing
+        this.sea = SEA
 
         //setup default ipfs gateway provider while we attempt to use local ipfs node
         this.enableIpfs('gateway')
@@ -48,12 +52,12 @@ class BusinessLogic {
     async getSetting(name){
         
         const encValue = await this.gunAppRoot.get('settings').get(name).then()
-        return await SEA.decrypt(encValue, this.userEncPair)
+        return await SEA.decrypt(encValue, this.userSEAPair)
     }
 
     async setSetting(name, value){
 
-        const encValue = await SEA.encrypt(value, this.userEncPair)
+        const encValue = await SEA.encrypt(value, this.userSEAPair)
         return await this.gunAppRoot.get('settings').get(name).put(encValue).then()
     }
 
@@ -189,7 +193,7 @@ class BusinessLogic {
             this.isLoggedIn = true
             this.gunAppRoot = this.gunUser.get('sovereign')
             this.mySoul = this.gunUser['_'].soul
-            this.userEncPair = ack.sea
+            this.userSEAPair = ack.sea
             
             //if we aren't connected to a local node, let's try to connect to pinata now
             if(!this.ipfsProvider.canPut){ await this.enableIpfs('pinata')} //await it to help ensure we connect before re-rendering
@@ -281,6 +285,10 @@ class BusinessLogic {
       
     }
 
+    parsePubFromSoul(soul){
+        return this.parseUserFromSoul(soul).slice(1)
+    }
+
     isMine(soul){
         return this.parseUserFromSoul(soul) == this.mySoul
     }
@@ -358,39 +366,137 @@ class BusinessLogic {
 
     }
 
-    async followUser(soul){
+    async followUser(userSoul){
         
         //ensure soul is just for the user
-        soul = this.parseUserFromSoul(soul)
+        userSoul = this.parseUserFromSoul(userSoul)
 
-        //get user referecne
-        const userRef = this.gun.get(soul)
+        //get user reference
+        const userRef = this.gun.get(userSoul)
 
         //follow user
-        this.gunAppRoot.get('following').get(soul).put({ 
-            trusted: false, 
+        this.gunAppRoot.get('following').get(userSoul).put({ 
+            trusted: false,
             mute: false,
-            key: soul
+            key: userSoul,
+            pub: this.parsePubFromSoul(userSoul)
         }).get('user').put(userRef);
         
     }
 
-    async createPost(post, attachments){
-        
-        //create new post
+    async encryptOrNot(value, key){
+        //returns an encrypted value or if no key, the unencrypted value
+        return key ? await SEA.encrypt(value, key) : value;
+    }
+
+    async decryptOrNot(value, key){
+        //returns an encrypted value or if no key, the unencrypted value
+        return key ? await SEA.decrypt(value, key) : value;
+    }
+
+    async setUserCommentTrust(userSoul, isTrusted){
+
+        //ensure soul is just for the user
+        userSoul = this.parseUserFromSoul(userSoul)
+
+        //update comments cert
+        const userPub = this.parsePubFromSoul(userSoul)
+        const cert = isTrusted ? await SEA.certify(
+            userPub,
+            {"*": "sovereign/comments","+":"*"},
+            this.userSEAPair,
+            null,
+            {blacklist: this.gunAppRoot.get('certs').get('comments').get('blacklist')}
+        ) : null
+        this.gunAppRoot.get('certs').get('comments').get(userSoul).put(cert)
+
+        //update blacklist
+        this.gunAppRoot.get('certs').get('comments').get('blacklist').get(userPub).put(!isTrusted)
+
+        //update followed user trust property
+        this.gunAppRoot.get('following').get(userSoul).get('trusted').put(isTrusted)
+
+    }
+
+    async setReadPostTrust(postSoul, encryptionKey){
+
+        //add trust for self
+        const encryptedKey = await SEA.encrypt(encryptionKey, this.userSEAPair)
+        this.gun.get(postSoul).get('trusted').get(this.mySoul).put(encryptedKey)
+
+        //add trust for trusted
+        this.gunAppRoot.get('following').map().once(
+            async (value, key, _msg, _ev) => {
+     
+                //if trusted, add key to trust
+                if(value && value.trusted){
+                    const ePub = await value.userRef.get('epub').then()
+                    const encryptedKey = await SEA.encrypt(encryptionKey, ePub)
+                    this.gun.get(postSoul).get('trusted').get(key).put(encryptedKey)
+                }
+
+            }
+        )
+
+        //todo: remove trust for those I no longer trust...
+
+    }
+
+    async createComment(postSoul, text){
+
+        //prepare for encrypting the comment
+        const ownerSoul = this.parseUserFromSoul(postSoul)
+        const isEncrypted = await this.gun.get(postSoul).get('encrypted').then()
+        const encryptedKey = isEncrypted ? await this.gun.get(postSoul).get('trusted').get(ownerSoul).then() : null
+        if(isEncrypted && !encryptedKey){ console.log('no encryption key found for the user to comment'); return false}
+        const encryptionKey = encryptedKey ? await SEA.decrypt(encryptedKey, this.userSEAPair) : null
+
+        //build comment
         const created = new Date().getTime()
-        const key = crypto.randomBytes(20).toString('hex')
+        const commentKey = created + this.mySoul
+        const comment = {
+            text: this.encryptOrNot(text, encryptionKey),
+            created: created,
+        } //todo: see if we need to write the author and have them sign it, or if we can parse from the gun object...
+
+        //write the comment
+        const postID = this.parseIDFromSoul(postSoul)
+        if(this.isMine(postSoul)){
+            //write to my user node
+            this.gunAppRoot.get('comments').get(postID).get(commentKey).put(comment)
+        }else{
+            //write to another user's node using cert
+            const cert = await this.gun.get(ownerSoul).get('sovereign').get('certs').get('comments').then()  //todo: check to see if the cert includes me
+            this.gun.get('ownerSoul').get('sovereign').get('comments').get(postID).get(commentKey).put(comment, cert)
+        }
+
+    }
+
+    async createPost(post, attachments, encrypt){
+
+        //create new post
+        const encryptionKey = encrypt ? crypto.randomBytes(32).toString('hex') : '' //32 bytes = 256 bit
+        const created = new Date().getTime()
+        const key = created + this.mySoul
         this.gunAppRoot.get('posts').get(key).put({
-            text: post.text,
+            encrypted: !!encrypt,
+            text: await this.encryptOrNot(post.text, encryptionKey),
             created: created,
             modified: created,
             key: key
         }).once(async (data) => {
             
+            
             //get the post and add ref to profile as last post
             const postRef = this.gunAppRoot.get('posts').get(key)
-            this.gunAppRoot.get('profile').get('lastPost').put(postRef)
+            this.gunAppRoot.get('profile').get('lastPostTrusted').put(postRef)
+            if(!encrypt){this.gunAppRoot.get('profile').get('lastPost').put(postRef)}
 
+            //add decryption keys if encrypted
+            if(encrypt){
+                this.setReadPostTrust(data['_']['#'], encryptionKey)
+            }
+            
             //add attachments
             if(attachments && attachments.length){
                 attachments.forEach(async attachment => {
@@ -398,18 +504,25 @@ class BusinessLogic {
                     //what type of attachment?
                     let attachmentNode = {}
                     if(attachment.type == 'url'){
-                        attachmentNode = {...attachment}
-                    }else if(attachment.type.startsWith('image/')){
                         attachmentNode = {
                             key: attachment.key,
                             type: 'image',
-                            ipfsHash: await this.ipfsProvider.putFile(attachment)
+                            url: await this.encryptOrNot(attachment.url, encryptionKey),
+                            title: await this.encryptOrNot(attachment.title, encryptionKey),
+                            description: await this.encryptOrNot(attachment.description, encryptionKey),
+                            image: await this.encryptOrNot(attachment.image, encryptionKey)
+                        }
+                    }else if(attachment.type.startsWith('image')){
+                        attachmentNode = {
+                            key: attachment.key,
+                            type: 'image',
+                            ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
                         }
                     }else {
                         attachmentNode = {
                             key: attachment.key,
                             type: 'file',
-                            ipfsHash: await this.ipfsProvider.putFile(attachment)
+                            ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
                         }
                     }
                     
@@ -439,30 +552,10 @@ class BusinessLogic {
         
     }
 
-    async getPicture(hash){
+    async getFileFromIpfs(hash){
 
         const file = await this.ipfsProvider.getFile(hash)
         return file
-
-    }
-
-    async getProfile(soul, cb){
-
-        //if no soul provided assume user's soul
-        if(!soul){
-
-            //return users profile
-            return this.gunUser.get('sovereign').get('profile').once(cb)
-
-        } else {
-
-            //ensure soul is just for the user
-            soul = this.parseUserFromSoul(soul)
-
-            //get profile reference
-            return this.gun.get(soul).get('sovereign').get('profile').once(cb)
-
-        }
 
     }
 
@@ -477,20 +570,49 @@ class BusinessLogic {
         
     }
 
-    async subscribePosts(setPosts, soul, unSubs, once){
+    async subscribePosts(soul, setPosts, unSubs, once){
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
+
+        //local helper function to check for decryption before responding
+        const setPostWithDecryptionKey =  async (value, key) => {
+            
+            //encrypted?
+            if(value && value.encrypted){
+        
+                //encrypted so check to see if this user is trusted and get the decryption key
+                const postSoul = Gun.node.soul(value)
+                this.gun.get(postSoul).get('trusted').get(this.mySoul).once(
+                    async (encryptedKey) =>  {
+                        //trusted?
+                        if(encryptedKey){                                    
+                            //enrich with decryption key and add it
+                            const decryptionKey = await SEA.decrypt(encryptedKey, this.userSEAPair);
+                            const valueWithDecryptionKey = {...value, decryptionKey: decryptionKey}
+                            setPosts(prevState => this.manageArrayState(prevState, valueWithDecryptionKey, key, 'created'))
+                        }
+                    }
+                )
+
+            } else {
+
+                //public post so just add it
+                setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+
+            }
+        }
 
         //single user or following (plus self)?
         if(soul){
 
             //handle updates to the posts of a single users
-            this.gun.get(soul).get('sovereign').get('posts').map().on(
+            const userSoul = this.parseUserFromSoul(soul)
+            this.gun.get(userSoul).get('sovereign').get('posts').map().on(
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                     if(once){_ev.off()}
-                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                    setPostWithDecryptionKey(value, key)
                 }
             )  
 
@@ -501,7 +623,7 @@ class BusinessLogic {
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                     if(once){_ev.off()}
-                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                    setPostWithDecryptionKey(value, key)
                 }
             )       
             
@@ -510,7 +632,7 @@ class BusinessLogic {
                 (value, key, _msg, _ev) =>  {
                     if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                     if(once){_ev.off()}
-                    setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                    setPostWithDecryptionKey(value, key)
                 }
             )                
 
@@ -539,94 +661,158 @@ class BusinessLogic {
 
     }
 
-    async subscribeProfile(soul, setProfile, setProfilePic, setFollowing, setLastPost, unSubs, once){
+    async subscribeProfile(soul, setProfile, unSubs, once){
 
-        //default soul to the user's
-        soul = soul ? soul : this.mySoul;
-console.log(soul)
-        //track events to unsub
+        //sanitize input
+        const userSoul = soul ? this.parseUserFromSoul(soul) : this.mySoul
+        unSubs = unSubs ? unSubs : []
+
+        //get profile
+        this.gun.get(userSoul).get('sovereign').get('profile').on(
+            (value, key, _msg, _ev) => {
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(once){_ev.off()}
+                setProfile({...value})
+            }
+        )
+
+    }
+    
+    async subscribeProfilePic(soul, setProfilePic, unSubs, once){
+
+        //sanitize input
+        const userSoul = soul ? this.parseUserFromSoul(soul) : this.mySoul
         unSubs = unSubs ? unSubs : []
         
-        //get profile
-        if(setProfile){
-            this.gun.get(soul).get('sovereign').get('profile').on(
-                (value, key, _msg, _ev) => {
-                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    if(once){_ev.off()}
-                    setProfile({...value})
-                }
-            )
-        }
+        //get pic
+        this.gun.get(userSoul).get('sovereign').get('profile').get('picture').on(
+            async(value, key, _msg, _ev) => {
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(once){_ev.off()}
+                setProfilePic(await this.getFileFromIpfs(value))
+            }
+        )
+    }
 
-        //get profile picture
-        if(setProfilePic){
-            this.gun.get(soul).get('sovereign').get('profile').get('picture').on(
-                async(value, key, _msg, _ev) => {
-                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    if(once){_ev.off()}
-                    setProfilePic(await this.getPicture(value))
-                    console.log('set profile pic event')
-                }
-            )
-        }
+    async subscribeFollowing(soul, setFollowing, unSubs, once){
+        
+        //right now this is only used for getting/checking for the following info on a single user but in the future can be expanded to return .map() if userSoul is empty
 
-        //get following
-        if(!this.isMine(soul) && setFollowing){
-            this.gunAppRoot.get('following').get(soul).on(
-                (value, key, _msg, _ev) => {
-                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    if(once){_ev.off()}
-                    setFollowing({...value}) 
-                }
-            )   
-        }
+        //sanitize input
+        const userSoul = soul ? this.parseUserFromSoul(soul) : this.mySoul
+        if(this.isMine(userSoul)){console.log('ignoring request for following info on myself');return;}
+        unSubs = unSubs ? unSubs : []
 
-        //get last post
-        if(setLastPost){
-            this.gun.get(soul).get('sovereign').get('profile').get('lastPost').on(
-                (value, key, _msg, _ev) => {
-                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                    if(once){_ev.off()}
-                    setLastPost({...value})
-                }
-            )
-        }
+        //get following info about this one soul
+        unSubs = unSubs ? unSubs : []
+        this.gunAppRoot.get('following').get(userSoul).on(
+            (value, key, _msg, _ev) => {
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(once){_ev.off()}
+                setFollowing({...value}) 
+            }
+        )   
 
     }
 
-    async subscribePost(soul, setPost, setAttachments, setProfile, unSubs){
+    async subscribeLastPost(soul, setLastPost, unSubs, once){
 
-        //track events to unsub
+        //sanitize input
+        const userSoul = soul ? this.parseUserFromSoul(soul) : this.mySoul
         unSubs = unSubs ? unSubs : []
 
-        //get post
-        this.gun.get(soul).on(
+        //get last post for user
+        this.gun.get(userSoul).get('sovereign').get('profile').get('lastPost').on(
             (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setPost({...value})
+                if(once){_ev.off()}
+                setLastPost({...value})
             }
         )
+
+    }
+
+    async subscribePost(postSoul, setPost, decryptionKey, unSubs, once){
         
-        //get attachments
-        this.gun.get(soul).get('attachments').map().on(
+        //get post
+        unSubs = unSubs ? unSubs : []
+        this.gun.get(postSoul).on(
             async (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-               
-                const attachment = {...value}
-                if(attachment.type == 'image'){
-                    const picUrl = await this.getPicture(attachment.ipfsHash)
-                    attachment.url = picUrl
+                if(once){_ev.off()}
+
+                //copy post
+                const post = {...value}
+
+                //encrypted and no key
+                if(post.encrypted && !decryptionKey){
+                    console.log('encrypted post encountered but no decryption key provided, returning encrypted', postSoul)
                 }
                 
+                //decrypt if necessary
+                post.text = await this.decryptOrNot(post.text, decryptionKey)
+
+                setPost(post)
+            }
+        )
+
+    }
+
+    async subscribePostAttachments(postSoul, setAttachments, decryptionKey, unSubs, once){
+        
+        //get attachments
+        unSubs = unSubs ? unSubs : []
+        this.gun.get(postSoul).get('attachments').map().on(
+            async (value, key, _msg, _ev) => {
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(once){_ev.off()}
+            
+                //copy attachment
+                const attachment = {...value}
+                
+                //handle types of attachment
+                switch (attachment.type) {
+                    case 'url':
+                        attachment.url = await this.decryptOrNot(attachment.url, decryptionKey)
+                        attachment.title = await this.decryptOrNot(attachment.title, decryptionKey)
+                        attachment.description = await this.decryptOrNot(attachment.description, decryptionKey)
+                        attachment.image = await this.decryptOrNot(attachment.image, decryptionKey)
+                        break;
+                
+                    case 'image':
+                        attachment.url = await this.getFileFromIpfs(attachment.ipfsHash)
+                        break;
+
+                    case 'file':
+                        //todo
+                        break;
+
+                    default:
+                        break;
+                }
+            
                 setAttachments(prevState => this.manageArrayState(prevState, attachment, key, 'key'))
             }
         )
 
-        //get profile of the poster
-        this.gun.get(this.parseUserFromSoul(soul)).get('sovereign').get('profile').on(
-            (value, key, _msg, _ev) => {
+    }
+    
+    async subscribeComments(postSoul, setComments, decryptionKey, unSubs, once){
+
+        //get comments
+        unSubs = unSubs ? unSubs : []
+        const userSoul = this.parseUserFromSoul(postSoul)
+        const postId = this.parseIDFromSoul(postSoul)
+        this.gun.get(userSoul).get('sovereign').get('comments').get(postId).map().on(
+            async (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                setProfile({...value})
+                if(once){_ev.off()}
+                
+                const comment = {...value}
+                comment.text = await this.decryptOrNot(comment.text, decryptionKey)
+                comment.user = key.splice(key.indexOf('~')) //parse the user from the key
+                setComments(prevState => this.manageArrayState(prevState, comment, key, 'key'))
+
             }
         )
 

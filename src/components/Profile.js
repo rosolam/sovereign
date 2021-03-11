@@ -19,19 +19,15 @@ const Profile = ({soul}) => {
 
     useEffect(() => {
 
-        console.log('setting profile event handler')
-        apiContext.businessLogic.subscribeProfile(
-            soul,
-            setProfile,
-            setProfilePic,
-            setFollowing,
-            setLastPost,
-            eventUnSubs
-        )
+        console.log('setting profile event handlers', soul)
+        apiContext.businessLogic.subscribeProfile(soul,setProfile, eventUnSubs, false)
+        apiContext.businessLogic.subscribeProfilePic(soul,setProfilePic, eventUnSubs, false)
+        apiContext.businessLogic.subscribeFollowing(soul,setFollowing, eventUnSubs, false)
+        apiContext.businessLogic.subscribeLastPost(soul,setLastPost, eventUnSubs, false)
 
         return () => {
 
-            console.log('dropping profile event handler')
+            console.log('dropping profile event handlers')
             if(eventUnSubs){
                 eventUnSubs.forEach(u => u.off())
             }

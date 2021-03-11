@@ -2,15 +2,16 @@ import { useState, useContext, useEffect, useRef } from 'react'
 import { Modal, Form, Button, ButtonGroup, Carousel, Dropdown } from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 import { BsLink45Deg, BsImages, BsPaperclip, BsFillXSquareFill} from "react-icons/bs"
-import LinkPreview from './LinkPreview'
+import LinkPreview from '../components/LinkPreview'
 import crypto from 'crypto'
 
-const NewPostModal = ({ show, onClose }) => {
+const CreatePost = ({ show, onClose }) => {
 
     const apiContext = useContext(ApiContext)
 
     const [text, setText] = useState('')
     const [attachments, setAttachments] = useState([]);
+    const [isPublic, setIsPublic] = useState(false)
     const [url, setUrl] = useState('')
     const [urlIsValid, setUrlIsValid] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0);
@@ -46,6 +47,7 @@ const NewPostModal = ({ show, onClose }) => {
             setAttachments([]);
             setUrl('')
             setUrlIsValid(false)
+            setIsPublic(false)
         }
 
     }, [show]);
@@ -131,7 +133,7 @@ const NewPostModal = ({ show, onClose }) => {
         //create post
         apiContext.businessLogic.createPost({
             text: text
-        }, attachments)
+        }, attachments, !isPublic)
 
         //close the form
         onClose()
@@ -147,7 +149,7 @@ const NewPostModal = ({ show, onClose }) => {
                 <Modal.Body>
 
                     <Form.Group>
-                        <Form.Control as='textarea' rows='3' placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
+                        <Form.Control as='textarea' rows='2' placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
                         <Form.File ref={fileUploadRef} style={{ display: 'none' }} onChange={(e) => handleFileChange(e,)} multiple/>
                         <div className='d-flex w-100 my-1'>
                             <ButtonGroup className='mr-1 w-100'>
@@ -161,7 +163,7 @@ const NewPostModal = ({ show, onClose }) => {
                     <Carousel activeIndex={carouselIndex} onSelect={handleCarouselSelect} className="bg-dark" interval={null} indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
                         {attachments.map((attachment, index) => (
                             <Carousel.Item key={attachment.key}>
-                                <div className='d-flex justify-content-center pt-2'><Button variant="danger" onClick={() => handleDelete(attachment.key)}><BsFillXSquareFill className='mr-2' />Remove</Button></div>
+                                <div className='d-flex justify-content-center pt-2'><Button size='sm' variant="danger" onClick={() => handleDelete(attachment.key)}><BsFillXSquareFill className='mr-2' />Remove</Button></div>
                                 <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
                                     {attachment.type.startsWith('image/') && <img src={attachment.preview} style={{maxHeight:'275px'}}className="img-fluid mx-auto d-block" />}
                                     {attachment.type == 'url' && <div style={{minHeight:'125px'}} ><LinkPreview attachment={attachment}/></div>}
@@ -172,12 +174,13 @@ const NewPostModal = ({ show, onClose }) => {
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleSubmit}>Post!</Button>
+                    <Form.Check type='radio' inline label='Public' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
+                    <Form.Check type='radio' inline label='Private' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/>
+                    <Button variant="primary" className="ml-3" type="submit" onClick={handleSubmit}>Post!</Button>
                 </Modal.Footer>
             </Modal>
         </>
     );
 }
 
-export default NewPostModal
+export default CreatePost

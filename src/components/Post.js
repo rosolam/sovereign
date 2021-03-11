@@ -4,12 +4,13 @@ import { useState, useEffect, useContext} from 'react'
 import LinkPreview from './LinkPreview'
 import ApiContext from '../api/ApiContext'
 
-const Post = ({soul}) => {
+const Post = ({soul, decryptionKey}) => {
     
     const apiContext = useContext(ApiContext)
 
     const [postRoot, setPostRoot] = useState({text:'loading...'})
     const [attachments, setAttachments] = useState([])
+    const [comments, setComments] = useState([])
     const [profile, setProfile] = useState({name:'loading...', picture:null})
 
     let eventUnSubs
@@ -25,17 +26,15 @@ const Post = ({soul}) => {
 
     useEffect(() => {
 
-        console.log('setting post event handler')
-        apiContext.businessLogic.subscribePost(
-            soul,
-            setPostRoot,
-            setAttachments, 
-            setProfile
-        )
-        
+        console.log('setting post event handlers')
+        apiContext.businessLogic.subscribePost(soul,setPostRoot,decryptionKey,eventUnSubs)
+        apiContext.businessLogic.subscribePostAttachments(soul,setAttachments,decryptionKey,eventUnSubs)
+        apiContext.businessLogic.subscribeProfile(soul,setProfile,eventUnSubs)
+        apiContext.businessLogic.subscribeComments(soul,setComments,decryptionKey,eventUnSubs)
+
         return () => {
 
-            console.log('dropping post event handler')
+            console.log('dropping post event handlers')
             if(eventUnSubs){
                 eventUnSubs.forEach(u => u.off())
             }

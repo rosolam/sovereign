@@ -4,10 +4,10 @@ import { useHistory } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react'
 import ApiContext from '../api/ApiContext'
 import BackArrow from './BackArrow';
-import NewPostModal from './NewPostModal'
-import UpdateProfileModal from './UpdateProfileModal'
-import FollowModal from './FollowModal'
-import AddressModal from './AddressModal'
+import CreatePost from '../modals/CreatePost'
+import EditProfile from '../modals/EditProfile'
+import FollowUser from '../modals/FollowUser'
+import UserAddress from '../modals/UserAddress'
 import ProfilePic from './ProfilePic'
 
 const FeedHeader = ({ soul }) => {
@@ -28,19 +28,14 @@ const FeedHeader = ({ soul }) => {
 
     useEffect(() => {
 
-        console.log('setting profile event handler', soul)
-        apiContext.businessLogic.subscribeProfile(
-            soul,
-            setProfile,
-            setProfilePic,
-            setFollowing,
-            null,
-            eventUnSubs
-        )
+        console.log('setting profile event handlers', soul)
+        apiContext.businessLogic.subscribeProfile(soul,setProfile, eventUnSubs, false)
+        apiContext.businessLogic.subscribeProfilePic(soul,setProfilePic, eventUnSubs, false)
+        apiContext.businessLogic.subscribeFollowing(soul,setFollowing, eventUnSubs, false)
 
         return () => {
 
-            console.log('dropping profile event handler')
+            console.log('dropping profile event handlers')
             if (eventUnSubs) {
                 eventUnSubs.forEach(u => u.off())
             }
@@ -61,10 +56,10 @@ const FeedHeader = ({ soul }) => {
 
     return (
         <>
-            <FollowModal show={followModal} onClose={() => { setFollowModal(false) }} />
-            <UpdateProfileModal show={myProfileModal} onClose={() => { setMyProfileModal(false) }} />
-            <NewPostModal show={postModal} onClose={() => { setPostModal(false) }} />
-            <AddressModal show={addressModal} onClose={() => { setAddressModal(false) }} soul={soul} />
+            <FollowUser show={followModal} onClose={() => { setFollowModal(false) }} />
+            <EditProfile show={myProfileModal} onClose={() => { setMyProfileModal(false) }} />
+            <CreatePost show={postModal} onClose={() => { setPostModal(false) }} />
+            <UserAddress show={addressModal} onClose={() => { setAddressModal(false) }} soul={soul} />
 
             <Navbar collapseOnSelect expand="lg" bg="dark" variant="dark">
                 <Navbar.Brand href="#" className='d-flex m-0 mr-1' >
