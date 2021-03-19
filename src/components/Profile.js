@@ -8,8 +8,7 @@ const Profile = ({soul}) => {
    
     const apiContext = useContext(ApiContext)
     let { id } = useParams();
-    const [profile, setProfile] = useState({name:'loading...', picture:''})
-    const [profilePic, setProfilePic] = useState()
+    const [profile, setProfile] = useState({name:'loading...'})
     const [following, setFollowing] = useState({unfollowed: true, trusted: false, mute: false})
     const [lastPost, setLastPost] = useState()
     const [timeElapsed, setTimeElapsed] = useState('')
@@ -21,7 +20,6 @@ const Profile = ({soul}) => {
 
         console.log('setting profile event handlers', soul)
         apiContext.businessLogic.subscribeProfile(soul,setProfile, eventUnSubs, false)
-        apiContext.businessLogic.subscribeProfilePic(soul,setProfilePic, eventUnSubs, false)
         apiContext.businessLogic.subscribeFollowing(soul,setFollowing, eventUnSubs, false)
         apiContext.businessLogic.subscribeLastPost(soul,setLastPost, eventUnSubs, false)
 
@@ -35,11 +33,6 @@ const Profile = ({soul}) => {
         };
 
     }, [])
-
-    useEffect(() => {
-        // Make sure to revoke the data uris to avoid memory leaks
-        URL.revokeObjectURL(profilePic);
-    }, [profilePic]);
 
     let timeElapsedUnSub = []
 
@@ -66,7 +59,7 @@ const Profile = ({soul}) => {
 
     return (
         <div className="profile d-flex" onClick={onProfileClick}>
-            <ProfilePic src={profilePic}/>
+            <ProfilePic soul={soul}/>
             <div className="d-flex flex-column flex-grow-1">
                 <div className="d-flex flex-fill">
                     <div style={{fontWeight:700, fontSize:'20px'}}>{profile.name}</div>

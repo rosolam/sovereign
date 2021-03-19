@@ -3,6 +3,7 @@ import { Modal, Form, Button } from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
 import ProfilePic from '../components/ProfilePic'
 import { BsPersonSquare} from "react-icons/bs"
+import { Link } from 'react-router-dom';
 
 const EditProfile = ({ show, onClose }) => {
 
@@ -95,7 +96,7 @@ const EditProfile = ({ show, onClose }) => {
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>
-                    {!apiContext.businessLogic.ipfsProvider.canPut &&  <Button variant="warning" onClick={onClose}>Setup IPFS Now</Button>}
+                    {!apiContext.businessLogic.ipfsProvider.canPut &&  <Button variant="warning" as={Link} to="/settings/upload">Setup IPFS Now</Button>}
                     <Button variant="secondary" onClick={onClose}>Close</Button>
                     <Button variant="primary" type="submit" onClick={handleSubmit}>Update</Button>
                 </Modal.Footer>

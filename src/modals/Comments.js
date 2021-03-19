@@ -1,40 +1,50 @@
-import {useContext} from 'react'
+import {useContext, useState, useEffect} from 'react'
 import {Modal,Form,Button} from 'react-bootstrap'
 import ApiContext from '../api/ApiContext'
+import Comment from '../components/Comment'
+import { BsFillChatQuoteFill as SubmitIcon } from "react-icons/bs"
 
-const Comments = ({show, onClose, comments}) => {
+const Comments = ({show, onClose, comments, encryptionKey, postSoul}) => {
     
     const apiContext = useContext(ApiContext)
-    let textAreaRef
+    const [newComment, setNewComment] = useState('')
+    const [isTrusted, setIsTrusted] = useState()
+    const eventUnSubs = []
 
-    const handleSubmit = (e) => {
-        
-        e.preventDefault()
-        
-        //copy to clipboard
-        textAreaRef.select()
-        document.execCommand("copy")
+    useEffect(() => {
+        apiContext.businessLogic.subscribeTrusted(postSoul,setIsTrusted,eventUnSubs,true)
+    }, [])
 
-        //close
-        onClose()
+    const createComment = () => {
+        apiContext.businessLogic.createComment(postSoul, encryptionKey, newComment)
+        setNewComment('')
+    }
 
-    } 
-  
     return (
         <>
             <Modal show={show} onHide={onClose}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Sovereign Address</Modal.Title>
+                    <Modal.Title>Comments</Modal.Title>
                 </Modal.Header>
-                <Modal.Body>
-                    <Form.Group controlId="formUserAddress">
-                        <Form.Label>Address</Form.Label>
-                        <Form.Control ref={(textarea) => textAreaRef = textarea} as="textarea" rows="3" size='md' value={soul} readOnly/>
-                    </Form.Group>
+                <Modal.Body className='p-2'>
+                {!comments.length && <div className='d-flex justify-content-center small'>... no comments yet ...</div>}
+
+                <div className="scrolling-wrapper" style={{height:'50vh'}}>
+                    <div className="scrolling-content">
+                        {comments.map((comment) => (
+                            <Comment comment={comment} key={comment.key}/>
+                        ))}
+                    </div>
+                </div>
+                    
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleSubmit}>Copy To Clipboard</Button>
+                    {isTrusted &&
+                        <div className="d-flex w-100">
+                            <Form.Control className='w-100 mr-1' as="textarea" rows="2" size='sm' value={newComment} onChange={(e) => setNewComment(e.target.value)}/>
+                            <Button variant="primary" onClick={createComment} disabled={!newComment}><SubmitIcon/></Button>
+                        </div>
+                    }
                 </Modal.Footer>
             </Modal>
       </>

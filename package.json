@@ -9,7 +9,7 @@
     "@testing-library/user-event": "^12.7.1",
     "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
-    "gun": "^0.2020.520",
+    "gun": "amark/gun",
     "ipfs-http-client": "^49.0.2",
     "react": "^17.0.1",
     "react-bootstrap": "^1.4.3",

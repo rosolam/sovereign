@@ -19,8 +19,7 @@ class BusinessLogic {
     #eventUnSubs = [];
     #setLoggedIn
     #newUser = false;
-    userSEAPair;
-    sea;
+    mySEAKeyPair;
 
     constructor(gunPeer){
 
@@ -30,9 +29,6 @@ class BusinessLogic {
         }
         this.gun = Gun(gunPeer ? gunPeer : "https://dev.rosolalaboratories.com:4000/gun")
         this.gunUser = this.gun.user()
-
-        //for testing
-        this.sea = SEA
 
         //setup default ipfs gateway provider while we attempt to use local ipfs node
         this.enableIpfs('gateway')
@@ -52,12 +48,12 @@ class BusinessLogic {
     async getSetting(name){
         
         const encValue = await this.gunAppRoot.get('settings').get(name).then()
-        return await SEA.decrypt(encValue, this.userSEAPair)
+        return await SEA.decrypt(encValue, this.mySEAKeyPair)
     }
 
     async setSetting(name, value){
 
-        const encValue = await SEA.encrypt(value, this.userSEAPair)
+        const encValue = await SEA.encrypt(value, this.mySEAKeyPair)
         return await this.gunAppRoot.get('settings').get(name).put(encValue).then()
     }
 
@@ -193,7 +189,7 @@ class BusinessLogic {
             this.isLoggedIn = true
             this.gunAppRoot = this.gunUser.get('sovereign')
             this.mySoul = this.gunUser['_'].soul
-            this.userSEAPair = ack.sea
+            this.mySEAKeyPair = ack.sea
             
             //if we aren't connected to a local node, let's try to connect to pinata now
             if(!this.ipfsProvider.canPut){ await this.enableIpfs('pinata')} //await it to help ensure we connect before re-rendering
@@ -238,15 +234,15 @@ class BusinessLogic {
         if(diff < 60000){
             return 'just now'
         }else if(diff < 3600000){
-            return Math.round(diff/60000) + ' mins'
+            return Math.round(diff/60000) + ' mins ago'
         }else if(diff < 86400000){
-            return Math.round(diff/3600000) + ' hrs'
+            return Math.round(diff/3600000) + ' hrs ago'
         }else if(diff < 604800000){
-            return Math.round(diff/86400000) + ' days'
+            return Math.round(diff/86400000) + ' days ago'
         }else if(diff < 2629743831.225){
-            return Math.round(diff/604800000) + ' wks'
+            return Math.round(diff/604800000) + ' wks ago'
         }else if(diff < 31556925974.7){
-            return Math.round(diff/2629743831.225) + ' mos'
+            return Math.round(diff/2629743831.225) + ' mos ago'
         }else {
             return 'long ago'
         }
@@ -366,7 +362,7 @@ class BusinessLogic {
 
     }
 
-    async followUser(userSoul){
+    async followUser(userSoul, follow){
         
         //ensure soul is just for the user
         userSoul = this.parseUserFromSoul(userSoul)
@@ -394,70 +390,93 @@ class BusinessLogic {
         return key ? await SEA.decrypt(value, key) : value;
     }
 
-    async setUserCommentTrust(userSoul, isTrusted){
+    async trustUser(userSoul, trust){
 
         //ensure soul is just for the user
         userSoul = this.parseUserFromSoul(userSoul)
 
         //update comments cert
         const userPub = this.parsePubFromSoul(userSoul)
-        const cert = isTrusted ? await SEA.certify(
+        const cert = trust ? await SEA.certify(
             userPub,
             {"*": "sovereign/comments","+":"*"},
-            this.userSEAPair,
+            this.mySEAKeyPair,
             null,
             {blacklist: this.gunAppRoot.get('certs').get('comments').get('blacklist')}
         ) : null
         this.gunAppRoot.get('certs').get('comments').get(userSoul).put(cert)
 
         //update blacklist
-        this.gunAppRoot.get('certs').get('comments').get('blacklist').get(userPub).put(!isTrusted)
+        this.gunAppRoot.get('certs').get('comments').get('blacklist').get(userPub).put(!trust)
 
         //update followed user trust property
-        this.gunAppRoot.get('following').get(userSoul).get('trusted').put(isTrusted)
+        this.gunAppRoot.get('following').get(userSoul).get('trusted').put(trust)
+
+        //iterate over every past post and add/remove trust
+        this.gunAppRoot.get('posts').once().map().once(async (post) => {
+            
+            //if tombstone or not encrypted, then return
+            if(!post || !post.encrypted){return}
+
+            const postSoul = Gun.node.soul(post)
+            
+            //trust or untrust?
+            if(trust){
+                const encryptedKey = await this.gun.get(postSoul).get('trusted').get(this.mySoul).then()
+                const decryptedKey = await SEA.decrypt(encryptedKey, this.mySEAKeyPair)
+                this.createPostTrust(postSoul,decryptedKey)
+            } else {
+                this.gun.get(postSoul).get('trusted').get(userSoul).put(null)
+            }
+ 
+        })
 
     }
 
-    async setReadPostTrust(postSoul, encryptionKey){
+    async createPostTrust(postSoul, encryptionKey){
 
         //add trust for self
-        const encryptedKey = await SEA.encrypt(encryptionKey, this.userSEAPair)
+        const encryptedKey = await SEA.encrypt(encryptionKey, this.mySEAKeyPair)
         this.gun.get(postSoul).get('trusted').get(this.mySoul).put(encryptedKey)
 
         //add trust for trusted
-        this.gunAppRoot.get('following').map().once(
+        this.gunAppRoot.get('following').once().map().once(
             async (value, key, _msg, _ev) => {
      
-                //if trusted, add key to trust
-                if(value && value.trusted){
-                    const ePub = await value.userRef.get('epub').then()
-                    const encryptedKey = await SEA.encrypt(encryptionKey, ePub)
+                //trusted?
+                if(!value || !value.trusted || !value.user){return}
+
+                //encrypyt decryption key using public key of user and add to the post trust
+                this.gun.get(value.user).once( async (user) => {
+
+                    const shareSecret = await SEA.secret(user.epub,this.mySEAKeyPair)
+                    const encryptedKey = await SEA.encrypt(encryptionKey, shareSecret)
+                    console.log('adding trust',user, shareSecret, encryptionKey, encryptedKey)
                     this.gun.get(postSoul).get('trusted').get(key).put(encryptedKey)
-                }
+
+                })
 
             }
         )
 
-        //todo: remove trust for those I no longer trust...
-
     }
 
-    async createComment(postSoul, text){
+    async createComment(postSoul, encryptionKey, text){
 
         //prepare for encrypting the comment
-        const ownerSoul = this.parseUserFromSoul(postSoul)
-        const isEncrypted = await this.gun.get(postSoul).get('encrypted').then()
-        const encryptedKey = isEncrypted ? await this.gun.get(postSoul).get('trusted').get(ownerSoul).then() : null
-        if(isEncrypted && !encryptedKey){ console.log('no encryption key found for the user to comment'); return false}
-        const encryptionKey = encryptedKey ? await SEA.decrypt(encryptedKey, this.userSEAPair) : null
+        const ownerSoul = this.parseUserFromSoul(postSoul)        
+        //const isEncrypted = await this.gun.get(postSoul).get('encrypted').then()
+        //const encryptedKey = isEncrypted ? await this.gun.get(postSoul).get('trusted').get(ownerSoul).then() : null
+        //if(isEncrypted && !encryptedKey){ console.log('no encryption key found for the user to comment'); return false}
+        //const encryptionKey = encryptedKey ? await SEA.decrypt(encryptedKey, this.mySEAKeyPair) : null 
 
         //build comment
         const created = new Date().getTime()
         const commentKey = created + this.mySoul
         const comment = {
-            text: this.encryptOrNot(text, encryptionKey),
+            text: await this.encryptOrNot(text, encryptionKey),
             created: created,
-        } //todo: see if we need to write the author and have them sign it, or if we can parse from the gun object...
+        } 
 
         //write the comment
         const postID = this.parseIDFromSoul(postSoul)
@@ -472,6 +491,65 @@ class BusinessLogic {
 
     }
 
+    async deleteSoul(soul, cert){
+
+        //define function that will call itself recursively
+        const recursiveDelete = async (soul) => {
+            
+            //get root node we want to delete
+            const node = await this.gun.get(soul).then()
+            
+            //iterate over each property of this node
+            for(const prop in node){
+
+                //ignore _ prop
+                if(prop=='_'){continue}
+
+                //if this is a link and that link is a child of the soul we are deleting, then recursively delete it first
+                if(node[prop]['#'] && node[prop]['#'].startsWith(soul)){
+                    await recursiveDelete(prop['#'])
+                }
+
+                //at this point we have a non-link property or a linked node that has already been deleted, time to null it out
+                if(this.isMine(soul)){
+                    this.gun.get(soul).get(prop).put(null)
+                }else{
+                    this.gun.get(soul).get(prop).put(null, cert)
+                }
+
+            }
+        }
+
+        //delete the node recursively
+        //await recursiveDelete(soul)
+
+        //finally unlink the parent/child node of the soul passed in
+        const keyDelim = soul.lastIndexOf('/') 
+        const path = soul.substring(0,keyDelim) 
+        const key = soul.substr(keyDelim + 1)
+        if(this.isMine(soul)){
+            console.log('delete mine', path, key)
+            this.gun.get(path).get(key).put(null)
+        }else{
+            console.log('delete other', path, key)
+            this.gun.get(path).get(key).put(null, cert)
+        }
+
+    }
+
+    async deleteComment(commentSoul){
+
+        if(!commentSoul){return}
+              
+        if(this.isMine(commentSoul)){
+            this.deleteSoul(commentSoul)
+        } else {
+            const cert = await this.gun.get(this.parseUserFromSoul(commentSoul)).get('sovereign').get('certs').get('comments').then()  //todo: check to see if the cert includes me
+            this.deleteSoul(commentSoul, cert)
+        }
+
+    }
+
     async createPost(post, attachments, encrypt){
 
         //create new post
@@ -480,6 +558,7 @@ class BusinessLogic {
         const key = created + this.mySoul
         this.gunAppRoot.get('posts').get(key).put({
             encrypted: !!encrypt,
+            epub: this.mySEAKeyPair.epub,
             text: await this.encryptOrNot(post.text, encryptionKey),
             created: created,
             modified: created,
@@ -489,12 +568,12 @@ class BusinessLogic {
             
             //get the post and add ref to profile as last post
             const postRef = this.gunAppRoot.get('posts').get(key)
-            this.gunAppRoot.get('profile').get('lastPostTrusted').put(postRef)
-            if(!encrypt){this.gunAppRoot.get('profile').get('lastPost').put(postRef)}
+            this.gunAppRoot.get('profile').get('lastPost').put(postRef)
+            if(!encrypt){this.gunAppRoot.get('profile').get('lastPublicPost').put(postRef)}
 
             //add decryption keys if encrypted
             if(encrypt){
-                this.setReadPostTrust(data['_']['#'], encryptionKey)
+                this.createPostTrust(data['_']['#'], encryptionKey)
             }
             
             //add attachments
@@ -546,9 +625,7 @@ class BusinessLogic {
         }
         
         //delete
-        //this.gun.get(soul).put(null)
-        const id = this.parseIDFromSoul(soul)
-        this.gunAppRoot.get('posts').get(id).put(null)
+        this.deleteSoul(soul)
         
     }
 
@@ -570,27 +647,58 @@ class BusinessLogic {
         
     }
 
+    /* async getDecryptionKey(node, cb){
+
+        //encrypted?
+        if(!node.encrypted){ cb(node) }
+
+        //check to see if this user is trusted and get the decryption key
+        this.gun.get(soul).get('trusted').get(this.mySoul).once(
+            async (encryptedKey) =>  {
+                
+                //trusted?
+                if(encryptedKey){    
+
+                    //if this is mine, I can just decrypt with my private key otherwise I need create a shared secret key using their epub
+                    const sharedSecret = this.isMine(soul) ? this.mySEAKeyPair.epriv : await SEA.secret(node.epub, this.mySEAKeyPair)
+                        
+                    //enrich with decryption key and add it
+                    const decryptionKey = await SEA.decrypt(encryptedKey, sharedSecret);
+                    cb(descryptionKey)
+                    
+                }
+            }
+        )
+
+    } */
+
     async subscribePosts(soul, setPosts, unSubs, once){
 
         //track events to unsub
         unSubs = unSubs ? unSubs : []
 
         //local helper function to check for decryption before responding
-        const setPostWithDecryptionKey =  async (value, key) => {
+        const setPostWithDecryptionKey =  async (post, key) => {
             
             //encrypted?
-            if(value && value.encrypted){
+            if(post && post.encrypted){
         
                 //encrypted so check to see if this user is trusted and get the decryption key
-                const postSoul = Gun.node.soul(value)
+                const postSoul = Gun.node.soul(post)
                 this.gun.get(postSoul).get('trusted').get(this.mySoul).once(
                     async (encryptedKey) =>  {
+                        
                         //trusted?
-                        if(encryptedKey){                                    
+                        if(encryptedKey){    
+
+                            //if this is my post, I can just decrypt with my private key otherwise I need create a shared secret key using their epub
+                            const sharedSecret = this.isMine(postSoul) ? this.mySEAKeyPair.epriv : await SEA.secret(post.epub, this.mySEAKeyPair)
+                                
                             //enrich with decryption key and add it
-                            const decryptionKey = await SEA.decrypt(encryptedKey, this.userSEAPair);
-                            const valueWithDecryptionKey = {...value, decryptionKey: decryptionKey}
+                            const decryptionKey = await SEA.decrypt(encryptedKey, sharedSecret);
+                            const valueWithDecryptionKey = {...post, decryptionKey: decryptionKey}
                             setPosts(prevState => this.manageArrayState(prevState, valueWithDecryptionKey, key, 'created'))
+                            
                         }
                     }
                 )
@@ -598,7 +706,7 @@ class BusinessLogic {
             } else {
 
                 //public post so just add it
-                setPosts(prevState => this.manageArrayState(prevState, value, key, 'created'))
+                setPosts(prevState => this.manageArrayState(prevState, post, key, 'created'))
 
             }
         }
@@ -721,14 +829,40 @@ class BusinessLogic {
         const userSoul = soul ? this.parseUserFromSoul(soul) : this.mySoul
         unSubs = unSubs ? unSubs : []
 
-        //get last post for user
-        this.gun.get(userSoul).get('sovereign').get('profile').get('lastPost').on(
-            (value, key, _msg, _ev) => {
-                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
-                if(once){_ev.off()}
-                setLastPost({...value})
-            }
-        )
+        if(this.isMine(userSoul)){
+
+            //get this users last post
+            this.gun.get(userSoul).get('sovereign').get('profile').get('lastPost').on(
+                (value, key, _msg, _ev) => {
+                    if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                    if(once){_ev.off()}
+                    setLastPost({...value})
+                }
+            )
+
+        } else {
+
+            //see if this user is trusted
+            this.gun.get(userSoul).get('sovereign').get('profile').get('following').get(this.mySoul).get('trusted').once(
+                (value, key, _msg, _ev) => {
+
+                    //get last post for user based on trusted or not to determine if we should show last post or last PUBLIC post
+                    const lastPostKey = value ? 'lastPost' : 'lastPublicPost'
+                    this.gun.get(userSoul).get('sovereign').get('profile').get(lastPostKey).on(
+                        (value, key, _msg, _ev) => {
+                            if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                            if(once){_ev.off()}
+                            setLastPost({...value})
+                        }
+                    )
+
+                }
+
+            )
+
+
+        }
+
 
     }
 
@@ -807,12 +941,45 @@ class BusinessLogic {
             async (value, key, _msg, _ev) => {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                 if(once){_ev.off()}
-                
+
+                //make sure the key has a single tilde to ensure that the key has not been manipulated by a bad actor commentor (by appending multiple public keys)
+                if ((key.match(/~/g) || []).length != 1){
+                    console.log('comment key is corrupt',key)
+                    return
+                };
+
+                //tombstone?
+                if(!value){
+                    setComments(prevState => this.manageArrayState(prevState, value, key, 'key'))
+                    return
+                }
+
+                //enrich value and respond
                 const comment = {...value}
                 comment.text = await this.decryptOrNot(comment.text, decryptionKey)
-                comment.user = key.splice(key.indexOf('~')) //parse the user from the key
+                comment.user = key.substr(key.indexOf('~'),88) //parse the user from the key with explicit length to prevent extra characters from being appended by a bad actor commentor                
+                comment.soul = Gun.node.soul(value)
                 setComments(prevState => this.manageArrayState(prevState, comment, key, 'key'))
 
+            }
+        )
+
+    }
+
+    async subscribeTrusted(soul, setTrust, unSubs, once){
+
+        unSubs = unSubs ? unSubs : []
+
+        //if this is me then respond true immediately
+        if(this.isMine(soul)){setTrust(true); return;}
+
+        //subscribe to a cert for me in another users's node 
+        const userSoul = this.parseUserFromSoul(soul)
+        this.gun.get(userSoul).get('sovereign').get('certs').get('comments').get(this.mySoul).on(
+            async (value, key, _msg, _ev) => {
+                if(!unSubs.includes(_ev)){unSubs.push(_ev)}
+                if(once){_ev.off()}
+                setTrust(value)
             }
         )
 

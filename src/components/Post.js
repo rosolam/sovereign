@@ -1,8 +1,13 @@
 import ProfilePic from './ProfilePic'
-import { Dropdown, Carousel, Spinner } from 'react-bootstrap'
+import { Dropdown, Carousel, Spinner, Button, Badge } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import LinkPreview from './LinkPreview'
 import ApiContext from '../api/ApiContext'
+import ModalController from '../modals/ModalController'
+import Comments from '../modals/Comments'
+import { BsChatDots as CommentIcon } from "react-icons/bs"
+import { BiShareAlt as ShareIcon } from "react-icons/bi"
+import { AiOutlineEdit as ManageIcon } from "react-icons/ai"
 
 const Post = ({soul, decryptionKey}) => {
     
@@ -47,7 +52,7 @@ const Post = ({soul, decryptionKey}) => {
     function ProfileHeader(){
         return (
             <div className="d-flex">
-                <div><ProfilePic src={profile.picture} size={40}/></div>
+                <div><ProfilePic soul={soul} size={40}/></div>
                 <div className="align-self-center" style={{'fontWeight':700, 'fontSize':'20px'}}>{profile ? profile.name : 'loading...'}</div>
             </div>
         );
@@ -87,20 +92,37 @@ const Post = ({soul, decryptionKey}) => {
                 
                 <AttachmentCarousel/>
                 
-                <div className="d-flex m-1">
-                    <div style={{'fontWeight':700, 'fontSize':'10px'}}>{Date(postRoot.created)}</div>
-                    <div className="flex-grow-1"></div>
-                    <div>
+                <div className="d-flex border-top border-bottom px-2">
+                    <div className="mx-auto" style={{'fontWeight':700, 'fontSize':'10px'}}>{apiContext.businessLogic.getTimeElapsed(postRoot.created)}</div>
+                    <div className="mx-auto" style={{'fontWeight':700, 'fontSize':'10px'}}>{decryptionKey ? 'Private' : 'Public'}</div>
+                </div>
+                <div className="d-flex">
+                    <div className="flex-fill p-1">
+                        <ModalController modal={Comments} modalProps={{comments:comments, encryptionKey: decryptionKey, postSoul:soul}}><Button className="btn-sm w-100"><CommentIcon/> <Badge variant="light" className="m">{comments.length}</Badge></Button></ModalController> 
+                    </div>
+                    <div className="flex-fill p-1">
                         <Dropdown>
-                            <Dropdown.Toggle className="btn-sm">action</Dropdown.Toggle>
+                            <Dropdown.Toggle className="w-100 btn-sm"><ShareIcon/></Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item>Make Private</Dropdown.Item>
-                                {apiContext.businessLogic.isMine(soul) && <Dropdown.Item onClick={() => apiContext.businessLogic.deletePost(soul)}>Delete</Dropdown.Item>}
-                                <Dropdown.Item>Share</Dropdown.Item>
+                                <Dropdown.Item>As Post (todo)</Dropdown.Item>
+                                <Dropdown.Item>Copy Link (todo)</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
                     </div>
+                    {apiContext.businessLogic.isMine(soul) &&
+                    <div className="flex-fill p-1">
+                        <Dropdown>
+                            <Dropdown.Toggle className="w-100 btn-sm"><ManageIcon/></Dropdown.Toggle>
+                            <Dropdown.Menu>
+                                <Dropdown.Item>Make Private (todo)</Dropdown.Item>
+                                <Dropdown.Item>Edit (todo)</Dropdown.Item>
+                                 <Dropdown.Item onClick={() => apiContext.businessLogic.deletePost(soul)}>Delete</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                    }
                 </div>
+
             </div>
     )
 }
