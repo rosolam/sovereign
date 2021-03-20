@@ -18,10 +18,10 @@ const Profile = ({soul}) => {
 
     useEffect(() => {
 
-        console.log('setting profile event handlers', soul)
+        console.log('setting profile event handlers')
         apiContext.businessLogic.subscribeProfile(soul,setProfile, eventUnSubs, false)
         apiContext.businessLogic.subscribeFollowing(soul,setFollowing, eventUnSubs, false)
-        apiContext.businessLogic.subscribeLastPost(soul,setLastPost, eventUnSubs, false)
+        apiContext.businessLogic.subscribeLastPost(soul, setLastPost, eventUnSubs, false)
 
         return () => {
 

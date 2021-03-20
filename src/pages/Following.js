@@ -22,12 +22,12 @@ const Following = () => {
       }
 
     const headerNavs = [
-        <ModalController modal={CreatePost}><Nav.Link>New Post</Nav.Link></ModalController>,
-        <ModalController modal={FollowUser}><Nav.Link>Follow Someone</Nav.Link></ModalController>,
-        <ModalController modal={UserAddress} modalProps={{soul:apiContext.businessLogic.mySoul}}><Nav.Link>Share My Address</Nav.Link></ModalController>,
-        <ModalController modal={EditProfile}><Nav.Link>Update My Profile</Nav.Link></ModalController>,
-        <Nav.Link as={Link} to="/settings/basic">Settings</Nav.Link>,
-        <Nav.Link href="#" onClick={handleLogout}>Logout</Nav.Link>
+        <ModalController modal={CreatePost} key="0"><Nav.Link>New Post</Nav.Link></ModalController>,
+        <ModalController modal={FollowUser} key="2"><Nav.Link>Follow Someone</Nav.Link></ModalController>,
+        <ModalController modal={UserAddress} modalProps={{soul:apiContext.businessLogic.mySoul}} key="3"><Nav.Link>Share My Address</Nav.Link></ModalController>,
+        <ModalController modal={EditProfile} key="4"><Nav.Link>Update My Profile</Nav.Link></ModalController>,
+        <Nav.Link as={Link} to="/settings/basic" key="5">Settings</Nav.Link>,
+        <Nav.Link href="#" onClick={handleLogout} key="6">Logout</Nav.Link>
     ]
 
     return (

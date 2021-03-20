@@ -9,16 +9,17 @@ import { BsChatDots as CommentIcon } from "react-icons/bs"
 import { BiShareAlt as ShareIcon } from "react-icons/bi"
 import { AiOutlineEdit as ManageIcon } from "react-icons/ai"
 
-const Post = ({soul, decryptionKey}) => {
+const Post = ({soul}) => {
     
     const apiContext = useContext(ApiContext)
 
+    const [decryptionKey, setDecryptionKey] = useState()
     const [postRoot, setPostRoot] = useState({text:'loading...'})
     const [attachments, setAttachments] = useState([])
     const [comments, setComments] = useState([])
     const [profile, setProfile] = useState({name:'loading...', picture:null})
 
-    let eventUnSubs
+    const eventUnSubs = []
 
     const revokeObjectURLs = () => {
         // Make sure to revoke the data uris to avoid memory leaks
@@ -30,12 +31,20 @@ const Post = ({soul, decryptionKey}) => {
     }
 
     useEffect(() => {
+        console.log('decrypting post')
+        apiContext.businessLogic.subscribePostDecryptionKey(soul,setDecryptionKey,eventUnSubs,true)
+    }, [])
+
+    useEffect(() => {
+
+        //wait for decryption key before loading post
+        if(decryptionKey === undefined){return}
 
         console.log('setting post event handlers')
-        apiContext.businessLogic.subscribePost(soul,setPostRoot,decryptionKey,eventUnSubs)
-        apiContext.businessLogic.subscribePostAttachments(soul,setAttachments,decryptionKey,eventUnSubs)
-        apiContext.businessLogic.subscribeProfile(soul,setProfile,eventUnSubs)
-        apiContext.businessLogic.subscribeComments(soul,setComments,decryptionKey,eventUnSubs)
+        apiContext.businessLogic.subscribePost(soul,setPostRoot,decryptionKey,eventUnSubs,false)
+        apiContext.businessLogic.subscribePostAttachments(soul,setAttachments,decryptionKey,eventUnSubs,false)
+        apiContext.businessLogic.subscribeProfile(soul,setProfile,eventUnSubs,false)
+        apiContext.businessLogic.subscribeComments(soul,setComments,decryptionKey,eventUnSubs,false)
 
         return () => {
 
@@ -47,7 +56,7 @@ const Post = ({soul, decryptionKey}) => {
         
         };
 
-    }, [])
+    }, [decryptionKey])
 
     function ProfileHeader(){
         return (

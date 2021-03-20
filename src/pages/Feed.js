@@ -21,17 +21,17 @@ const ProfileFeed = () => {
         if(isMe){
             return (
                 [
-                    <ModalController modal={CreatePost}><Nav.Link>New Post</Nav.Link></ModalController>,
-                    <ModalController modal={EditProfile}><Nav.Link>Update My Profile</Nav.Link></ModalController>,
-                    <ModalController modal={UserAddress} modalProps={{soul:soul}}><Nav.Link>Copy Address to Clipboard</Nav.Link></ModalController>,
+                    <ModalController modal={CreatePost} key="0"><Nav.Link>New Post</Nav.Link></ModalController>,
+                    <ModalController modal={EditProfile} key="1"><Nav.Link>Update My Profile</Nav.Link></ModalController>,
+                    <ModalController modal={UserAddress} modalProps={{soul:soul}} key="2"><Nav.Link>Copy Address to Clipboard</Nav.Link></ModalController>,
                 ]
             ) 
         } else {
             return (
                 [
-                    <Nav.Link onClick={() => {apiContext.businessLogic.trustUser(soul,true)}}>Trust</Nav.Link>,
-                    <Nav.Link onClick={() => {apiContext.businessLogic.followUser(soul,false)}}>Unfollow</Nav.Link>,
-                    <ModalController modal={UserAddress} modalProps={{soul:soul}}><Nav.Link>Copy Address to Clipboard</Nav.Link></ModalController>,
+                    <Nav.Link onClick={() => {apiContext.businessLogic.trustUser(soul,true)}} key="0">Trust</Nav.Link>,
+                    <Nav.Link onClick={() => {apiContext.businessLogic.followUser(soul,false)}} key="1">Unfollow</Nav.Link>,
+                    <ModalController modal={UserAddress} modalProps={{soul:soul}} key="2"><Nav.Link>Copy Address to Clipboard</Nav.Link></ModalController>,
                 ]
             )
         }

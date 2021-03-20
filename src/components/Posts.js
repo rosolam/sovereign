@@ -30,7 +30,7 @@ const Posts = ({soul}) => {
         <div className="scrolling-wrapper">
             <div className="scrolling-content">
                 {posts.map((post) => (
-                    <Post soul={post['_']['#']} decryptionKey={post.decryptionKey} key={post.key}/>
+                    <Post soul={post['_']['#']} key={post.key}/>
                 ))}
             </div>
         </div>
