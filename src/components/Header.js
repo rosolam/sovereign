@@ -6,7 +6,7 @@ const Header = ({showBack, backPath, label, subLabel, navs, picture, modals}) =>
         <>
             {modals}
             <Navbar sticky="top" collapseOnSelect expand="lg" bg="dark" variant="dark">
-                <Navbar.Brand href="#" className='d-flex m-0 mr-1 align-items-center' >
+                <Navbar.Brand className='d-flex m-0 mr-1 align-items-center' >
                     {showBack && <BackArrow path={backPath} />}
                     {picture}
                     <div className="ml-2 d-flex flex-column"><div>{label}</div><div className='small'>{subLabel}</div></div>

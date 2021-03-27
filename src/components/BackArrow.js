@@ -9,11 +9,19 @@ const BackArrow = (props) => {
     const onBackArrowClick = (e) => { 
         e.preventDefault()
 
-        //if an explicit path was provided to go back to use it otherwise use history to go back
+        //if an explicit path was provided to go back to use it otherwise go home or use history to go back
         if(props.path){
+            //go to path indicated
             history.push(props.path);
         } else {
-            history.goBack();
+
+            if(props.useHistory){
+                //go back in browser history
+                history.goBack();
+            } else {
+                //go home
+                history.push('/');
+            }
         }
     }
     

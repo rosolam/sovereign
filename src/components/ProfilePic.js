@@ -6,7 +6,7 @@ import ApiContext from '../api/ApiContext'
 const ProfilePic = ({soul, src, size}) => {
     
     const apiContext = useContext(ApiContext)
-    const [picture, setPicture] = useState(src)
+    const [picture, setPicture] = useState()
 
     let eventUnSubs
     useEffect(() => {
@@ -22,16 +22,18 @@ const ProfilePic = ({soul, src, size}) => {
                 eventUnSubs,
                 false
             )
+
+            return () => {
+                if (eventUnSubs) {
+                    eventUnSubs.forEach(u => u.off())
+                }
+                URL.revokeObjectURL(picture)
+            };
+        } else {
+            setPicture(src)
         }
 
-        return () => {
-            if (eventUnSubs) {
-                eventUnSubs.forEach(u => u.off())
-            }
-            URL.revokeObjectURL(picture)
-        };
-
-    }, [])
+    }, [src])
 
 
     return (

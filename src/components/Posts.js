@@ -28,6 +28,9 @@ const Posts = ({soul}) => {
 
     return (
         <div className="scrolling-wrapper">
+                {!posts.length && 
+                    <div className='d-flex h-100 justify-content-center align-items-center'><div style={{'fontWeight':700, 'fontSize':'10px'}}>no posts yet</div></div>
+                }
             <div className="scrolling-content">
                 {posts.map((post) => (
                     <Post soul={post['_']['#']} key={post.key}/>

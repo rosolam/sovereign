@@ -37,7 +37,8 @@ const App = () => {
               <Route path="/following" component={Following} />
               <Route path="/feed/:soul" component={Feed} />
               <Route path="/settings/:setting" component={Settings} />
-              <Route path="*"><Redirect to="/following" /></Route>
+              <Route path="/login"><Redirect to="/following" /></Route>
+              {/* <Route path="*"><Redirect to="/following" /></Route> <-- breaks continuing to originally requested path after logging in */}
             </>
           }
           {!isLoggedIn && 

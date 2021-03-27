@@ -15,6 +15,7 @@ const CreatePost = ({ show, onClose }) => {
     const [url, setUrl] = useState('')
     const [urlIsValid, setUrlIsValid] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0);
+    const [postEnabled, setPostEnabled] = useState();
 
     const handleCarouselSelect = (selectedIndex, e) => {
         //manually controlling the carousel index was necessary to prevent deletion of the last index from breaking the bootstrap component
@@ -60,6 +61,14 @@ const CreatePost = ({ show, onClose }) => {
         setUrlIsValid(isValid)
     }, [url]);
 
+    useEffect(() => {
+        setCarouselIndex(0);
+    }, [attachments])
+
+    useEffect(() => {
+        setPostEnabled(text || attachments.length)
+    }, [text, attachments])
+
     const handlePictureClick = () => {
         fileUploadRef.current.accept = "image/*"
         fileUploadType = 'image'
@@ -86,10 +95,13 @@ const CreatePost = ({ show, onClose }) => {
 
     const handleUrlAdd = async () => {
 
+        //ensure url has a protocol specified, default to 'http://'
+        const addUrl = url.includes('://') ? url : 'http://' + url
+ 
         //enrich with preview and key
         const attachment = {
-            ...await apiContext.businessLogic.getPreview(url),
-            url: url,
+            ...await apiContext.businessLogic.getPreview(addUrl),
+            url: addUrl,
             type: 'url',
             key: crypto.randomBytes(20).toString('hex')
         }
@@ -149,6 +161,7 @@ const CreatePost = ({ show, onClose }) => {
                 <Modal.Body>
 
                     <Form.Group>
+
                         <Form.Control as='textarea' rows='2' placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
                         <Form.File ref={fileUploadRef} style={{ display: 'none' }} onChange={(e) => handleFileChange(e,)} multiple/>
                         <div className='d-flex w-100 my-1'>
@@ -163,10 +176,10 @@ const CreatePost = ({ show, onClose }) => {
                     <Carousel activeIndex={carouselIndex} onSelect={handleCarouselSelect} className="bg-dark" interval={null} indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
                         {attachments.map((attachment, index) => (
                             <Carousel.Item key={attachment.key}>
-                                <div className='d-flex justify-content-center pt-2'><Button size='sm' variant="danger" onClick={() => handleDelete(attachment.key)}><BsFillXSquareFill className='mr-2' />Remove</Button></div>
                                 <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
+                                    <Button style={{position:'absolute', top:'0px'}} size='md' className='p-1 m-3' variant="danger" onClick={() => handleDelete(attachment.key)}><BsFillXSquareFill className='mr-2'/>Remove</Button>
                                     {attachment.type.startsWith('image/') && <img src={attachment.preview} style={{maxHeight:'275px'}}className="img-fluid mx-auto d-block" />}
-                                    {attachment.type == 'url' && <div style={{minHeight:'125px'}} ><LinkPreview attachment={attachment}/></div>}
+                                    {attachment.type == 'url' && <div style={{minHeight:'125px', maxHeight:'250px'}} ><LinkPreview attachment={attachment}/></div>}
                                 </div>
                             </Carousel.Item>
                         ))}
@@ -176,7 +189,7 @@ const CreatePost = ({ show, onClose }) => {
                 <Modal.Footer>
                     <Form.Check type='radio' inline label='Public' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
                     <Form.Check type='radio' inline label='Private' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/>
-                    <Button variant="primary" className="ml-3" type="submit" onClick={handleSubmit}>Post!</Button>
+                    <Button variant="primary" disabled={!postEnabled} className="ml-3" type="submit" onClick={handleSubmit}>Post</Button>
                 </Modal.Footer>
             </Modal>
         </>

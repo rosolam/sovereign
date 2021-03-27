@@ -64,14 +64,14 @@ class BusinessLogic {
 
         switch (provider) {
             case 'local':
-                console.log('attemping to connect to local IPFS node')
+                console.log('attempting to connect to a local IPFS node')
                 ipfs = new IpfsProviderLocalNode()
                 result = await ipfs.connect()
                 break;
             
             case 'pinata':
             
-                console.log('attemping to connect to local IPFS node')
+                console.log('attemping to connect to Pinata')
                 //get keys
                 const pinataApiKey = await this.getSetting('pinataApiKey')
                 const pinataApiSecret = await this.getSetting('pinataApiSecret')
@@ -106,7 +106,7 @@ class BusinessLogic {
             this.ipfsProvider = ipfs
             return true
         } else {
-            console.log('could not connect to ipfs provider:', ipfs.name)    
+            console.log('Not able to connect to ipfs provider:', ipfs.name)    
             return false
         }
 
@@ -204,7 +204,7 @@ class BusinessLogic {
         
     }
 
-    login(user, password, recall){
+    login(user, password, recall, cb){
 
         console.log('login request')
         
@@ -212,7 +212,7 @@ class BusinessLogic {
         if(recall){
             this.gunUser.recall({sessionStorage: true})
         } else {
-            this.gunUser.auth(user, password)
+            this.gunUser.auth(user, password, cb)
         }
 
     }
@@ -333,7 +333,7 @@ class BusinessLogic {
             if (!value) {
 
                 //yes, delete it
-                console.log('deleting item')
+                console.log('removing item from state')
                 return prevState.filter(p => p.key !== key)
 
             } else {
@@ -367,16 +367,23 @@ class BusinessLogic {
         //ensure soul is just for the user
         userSoul = this.parseUserFromSoul(userSoul)
 
-        //get user reference
-        const userRef = this.gun.get(userSoul)
+        //follow or unfollow?
+        if(!follow){
+            this.gunAppRoot.get('following').get(userSoul).put(null)
+        } else {
 
-        //follow user
-        this.gunAppRoot.get('following').get(userSoul).put({ 
-            trusted: false,
-            mute: false,
-            key: userSoul,
-            pub: this.parsePubFromSoul(userSoul)
-        }).get('user').put(userRef);
+            //get user reference
+            const userRef = this.gun.get(userSoul)
+
+            //follow user
+            this.gunAppRoot.get('following').get(userSoul).put({ 
+                trusted: false,
+                mute: false,
+                key: userSoul,
+                pub: this.parsePubFromSoul(userSoul)
+            }).get('user').put(userRef);
+
+        }
         
     }
 
@@ -402,7 +409,7 @@ class BusinessLogic {
             {"*": "sovereign/comments","+":"*"},
             this.mySEAKeyPair,
             null,
-            {blacklist: this.gunAppRoot.get('certs').get('comments').get('blacklist')}
+            {blacklist: 'certs/comments/blacklist'}
         ) : null
         this.gunAppRoot.get('certs').get('comments').get(userSoul).put(cert)
 
@@ -521,11 +528,11 @@ class BusinessLogic {
         const path = soul.substring(0,keyDelim) 
         const key = soul.substr(keyDelim + 1)
         if(this.isMine(soul)){
-            console.log('delete mine', path, key)
+            console.log('delete soul I own', path, key)
             this.gun.get(path).get(key).put(null)
         }else{
-            console.log('delete other', path, key)
-            this.gun.get(path).get(key).put(null, cert)
+            console.log('delete soul I do not own', path, key)
+            this.gun.get(path).get(key).put(null,null, cert)
         }
 
     }
@@ -537,8 +544,8 @@ class BusinessLogic {
         if(this.isMine(commentSoul)){
             this.deleteSoul(commentSoul)
         } else {
-            const cert = await this.gun.get(this.parseUserFromSoul(commentSoul)).get('sovereign').get('certs').get('comments').then()  //todo: check to see if the cert includes me
-            this.deleteSoul(commentSoul, cert)
+            const cert = await this.gun.get(this.parseUserFromSoul(commentSoul)).get('sovereign').get('certs').get('comments').get(this.mySoul).then()  //todo: check to see if the cert includes me
+            this.deleteSoul(commentSoul, {opt: {cert: cert}})
         }
 
     }
@@ -576,7 +583,7 @@ class BusinessLogic {
                     if(attachment.type == 'url'){
                         attachmentNode = {
                             key: attachment.key,
-                            type: 'image',
+                            type: 'url',
                             url: await this.encryptOrNot(attachment.url, encryptionKey),
                             title: await this.encryptOrNot(attachment.title, encryptionKey),
                             description: await this.encryptOrNot(attachment.description, encryptionKey),
@@ -965,6 +972,7 @@ class BusinessLogic {
                 if(once){_ev.off()}
 
                 //make sure the key has a single tilde to ensure that the key has not been manipulated by a bad actor commentor (by appending multiple public keys)
+                //todo validate fully with a good REGEX
                 if ((key.match(/~/g) || []).length != 1){
                     console.log('comment key is corrupt',key)
                     return

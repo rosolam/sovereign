@@ -76,7 +76,7 @@ const Post = ({soul}) => {
                 {attachments.map((attachment, index) => (
                     <Carousel.Item key={index}>
                         <div className="d-flex p-2 justify-content-center align-items-center">
-                            {attachment.type == 'image' && <><img src={attachment.url} className="img-fluid max-height-75 mx-auto d-block" /></>}
+                            {attachment.type == 'image' && <><img src={attachment.url} style={{maxHeight:'75vh'}} className="img-fluid mx-auto d-block" /></>}
                             {attachment.type == 'url' && <LinkPreview attachment={attachment}/>}
                             {attachment.type == 'file' && <div style={{minHeight:'125px'}} >todo: file attachment component</div>}
                         </div>
@@ -123,7 +123,7 @@ const Post = ({soul}) => {
                         <Dropdown>
                             <Dropdown.Toggle className="w-100 btn-sm"><ManageIcon/></Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item>Make Private (todo)</Dropdown.Item>
+                                <Dropdown.Item>Toggle Privacy (todo)</Dropdown.Item>
                                 <Dropdown.Item>Edit (todo)</Dropdown.Item>
                                  <Dropdown.Item onClick={() => apiContext.businessLogic.deletePost(soul)}>Delete</Dropdown.Item>
                             </Dropdown.Menu>

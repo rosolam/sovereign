@@ -27,6 +27,9 @@ const Profiles = () => {
 
     return (
         <div className="scrolling-wrapper">
+            {!profiles.length && 
+                <div className='d-flex h-100 justify-content-center align-items-center'><div style={{'fontWeight':700, 'fontSize':'10px'}}>you are not following anyone yet</div></div>
+            }
             <div className="scrolling-content">
                 {profiles.map((profile) => (
                     <Profile soul={profile.key} key={profile.key} />

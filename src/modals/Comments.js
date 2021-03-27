@@ -27,9 +27,10 @@ const Comments = ({show, onClose, comments, encryptionKey, postSoul}) => {
                     <Modal.Title>Comments</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className='p-2'>
-                {!comments.length && <div className='d-flex justify-content-center small'>... no comments yet ...</div>}
-
                 <div className="scrolling-wrapper" style={{height:'50vh'}}>
+                    {!comments.length && 
+                        <div className='d-flex h-100 justify-content-center align-items-center'><div style={{'fontWeight':700, 'fontSize':'10px'}}>no comments yet</div></div>
+                    }
                     <div className="scrolling-content">
                         {comments.map((comment) => (
                             <Comment comment={comment} key={comment.key}/>

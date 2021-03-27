@@ -9,17 +9,18 @@ const EditProfile = ({ show, onClose }) => {
 
     const apiContext = useContext(ApiContext)
 
-    const [name, setName] = useState('')
+    const [profileName, setProfileName] = useState('')
     const [profilePic, setProfilePic] = useState('')
     const [file, setFile] = useState();
     const fileUploadRef = useRef(null);
+    const [enableSubmit, setEnableSubmit] = useState();
 
     useEffect(() => {
 
         if(show){
 
             console.log('fetching my profile')
-            apiContext.businessLogic.subscribeProfile(null,(profile) => {setName(profile.name)}, null, true)
+            apiContext.businessLogic.subscribeProfile(null,(profile) => {setProfileName(profile.name)}, null, true)
             apiContext.businessLogic.subscribeProfilePic(null,setProfilePic, null, true)
 
             return () => {
@@ -37,6 +38,7 @@ const EditProfile = ({ show, onClose }) => {
 
     const handleFileChange = (e) => {
 
+        console.log('change',e)
         // Make sure to revoke the data uris to avoid memory leaks
         if(profilePic){
             URL.revokeObjectURL(profilePic);
@@ -46,21 +48,18 @@ const EditProfile = ({ show, onClose }) => {
         setFile(e.target.files[0])
         setProfilePic(URL.createObjectURL(e.target.files[0]))
 
+        //allow submit
+        setEnableSubmit(true)
+
     }
 
     const handleSubmit = (e) => {
 
         e.preventDefault()
 
-        //TODO validation
-        if (!name) {
-            alert('Please provide a name')
-            return
-        }
-
         //update profile
         apiContext.businessLogic.updateProfile({
-            name: name
+            name: profileName
         }, file)
 
         //close
@@ -77,10 +76,10 @@ const EditProfile = ({ show, onClose }) => {
                 <Modal.Body>
                     <Form.Group controlId="formName">
                         <Form.Label>Name</Form.Label>
-                        <Form.Control type="text" placeholder="your name..." value={name} onChange={(e) => setName(e.target.value)} />
+                        <Form.Control type="text" placeholder="your name..." value={profileName} onChange={(e) => {setProfileName(e.target.value);setEnableSubmit(true)}} />
                     </Form.Group>
                     <Form.Group controlId="formPicture">
-                        <Form.File ref={fileUploadRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleFileChange(e,)}/>
+                        <Form.File ref={fileUploadRef} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleFileChange(e)}/>
                         <Form.Label>Picture</Form.Label>
                         <div className='d-flex'>
                                 <ProfilePic src={profilePic} size='75px'/>
@@ -97,8 +96,7 @@ const EditProfile = ({ show, onClose }) => {
                 </Modal.Body>
                 <Modal.Footer>
                     {!apiContext.businessLogic.ipfsProvider.canPut &&  <Button variant="warning" as={Link} to="/settings/upload">Setup IPFS Now</Button>}
-                    <Button variant="secondary" onClick={onClose}>Close</Button>
-                    <Button variant="primary" type="submit" onClick={handleSubmit}>Update</Button>
+                    <Button variant="primary" disabled={!enableSubmit} type="submit" onClick={handleSubmit}>Update</Button>
                 </Modal.Footer>
             </Modal>
         </>
