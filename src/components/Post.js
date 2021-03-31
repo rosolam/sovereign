@@ -8,6 +8,7 @@ import Comments from '../modals/Comments'
 import { BsChatDots as CommentIcon } from "react-icons/bs"
 import { BiShareAlt as ShareIcon } from "react-icons/bi"
 import { AiOutlineEdit as ManageIcon } from "react-icons/ai"
+import CreatePost from '../modals/CreatePost'
 
 const Post = ({soul}) => {
     
@@ -25,7 +26,7 @@ const Post = ({soul}) => {
         // Make sure to revoke the data uris to avoid memory leaks
         attachments.forEach(attachment => {
             if(attachment.type == 'image'){
-                URL.revokeObjectURL(attachment.url)
+                URL.revokeObjectURL(attachment.objectUrl)
             }
         })
     }
@@ -76,7 +77,7 @@ const Post = ({soul}) => {
                 {attachments.map((attachment, index) => (
                     <Carousel.Item key={index}>
                         <div className="d-flex p-2 justify-content-center align-items-center">
-                            {attachment.type == 'image' && <><img src={attachment.url} style={{maxHeight:'75vh'}} className="img-fluid mx-auto d-block" /></>}
+                            {attachment.type == 'image' && <><img src={attachment.objectUrl} style={{maxHeight:'75vh'}} className="img-fluid mx-auto d-block" /></>}
                             {attachment.type == 'url' && <LinkPreview attachment={attachment}/>}
                             {attachment.type == 'file' && <div style={{minHeight:'125px'}} >todo: file attachment component</div>}
                         </div>
@@ -123,8 +124,7 @@ const Post = ({soul}) => {
                         <Dropdown>
                             <Dropdown.Toggle className="w-100 btn-sm"><ManageIcon/></Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item>Toggle Privacy (todo)</Dropdown.Item>
-                                <Dropdown.Item>Edit (todo)</Dropdown.Item>
+                                <ModalController modal={CreatePost} modalProps={{postSoul:soul, postText:postRoot.text, postAttachments: attachments, postEncryptionKey: decryptionKey}}><Dropdown.Item>Edit</Dropdown.Item></ModalController>
                                  <Dropdown.Item onClick={() => apiContext.businessLogic.deletePost(soul)}>Delete</Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>

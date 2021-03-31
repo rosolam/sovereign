@@ -5,13 +5,13 @@ import { BsLink45Deg, BsImages, BsPaperclip, BsFillXSquareFill} from "react-icon
 import LinkPreview from '../components/LinkPreview'
 import crypto from 'crypto'
 
-const CreatePost = ({ show, onClose }) => {
+const CreatePost = ({ show, onClose, postSoul, postText, postAttachments, postEncryptionKey}) => {
 
     const apiContext = useContext(ApiContext)
 
-    const [text, setText] = useState('')
-    const [attachments, setAttachments] = useState([]);
-    const [isPublic, setIsPublic] = useState(false)
+    const [text, setText] = useState(postText || '')
+    const [attachments, setAttachments] = useState(postAttachments || []);
+    const [isPublic, setIsPublic] = useState(postSoul ? !postEncryptionKey : false)
     const [url, setUrl] = useState('')
     const [urlIsValid, setUrlIsValid] = useState(false)
     const [carouselIndex, setCarouselIndex] = useState(0);
@@ -28,8 +28,8 @@ const CreatePost = ({ show, onClose }) => {
     const revokeObjectURLs = () => {
         // Make sure to revoke the data uris to avoid memory leaks
         attachments.forEach(attachment => {
-            if(attachment.preview){
-                URL.revokeObjectURL(attachment.preview)
+            if(attachment.objectUrl){
+                URL.revokeObjectURL(attachment.objectUrl)
             }
         })
     }
@@ -61,10 +61,12 @@ const CreatePost = ({ show, onClose }) => {
         setUrlIsValid(isValid)
     }, [url]);
 
+    //go back to first attachment index when the attachments change to show what was added
     useEffect(() => {
         setCarouselIndex(0);
     }, [attachments])
 
+    //control whether submit button is enabled
     useEffect(() => {
         setPostEnabled(text || attachments.length)
     }, [text, attachments])
@@ -85,7 +87,9 @@ const CreatePost = ({ show, onClose }) => {
 
         //enrich attachment
         for(const file of e.target.files){
-            if(fileUploadType=='image'){file.preview = URL.createObjectURL(file)}
+            if(fileUploadType=='image'){
+                file.objectUrl = URL.createObjectURL(file)
+            }
             file.key = crypto.randomBytes(20).toString('hex')
         }
 
@@ -121,8 +125,8 @@ const CreatePost = ({ show, onClose }) => {
         const updatedAttachments = [...attachments].filter((v) => {return v != deletedAttachment})
         
         //revoke blob preview if necessary
-        if(deletedAttachment.preview){
-            URL.revokeObjectURL(deletedAttachment.preview)
+        if(deletedAttachment.objectUrl){
+            URL.revokeObjectURL(deletedAttachment.objectUrl)
         }
 
         //update attachments
@@ -137,15 +141,22 @@ const CreatePost = ({ show, onClose }) => {
         e.preventDefault()
 
         //TODO better validation
-        if (!text && !attachments.length) {
-            alert('Oops, nothing to post!')
-            return
-        }
 
-        //create post
-        apiContext.businessLogic.createPost({
-            text: text
-        }, attachments, !isPublic)
+        if(postSoul){
+            //update post
+            apiContext.businessLogic.updatePost(
+                postSoul, 
+                {text: text, attachments: attachments},
+                postEncryptionKey,
+                (!isPublic == !!postEncryptionKey)
+            )
+        } else {
+            //create post
+            apiContext.businessLogic.createPost(
+                {text: text, attachments: attachments},
+                !isPublic
+            )
+        }
 
         //close the form
         onClose()
@@ -161,8 +172,7 @@ const CreatePost = ({ show, onClose }) => {
                 <Modal.Body>
 
                     <Form.Group>
-
-                        <Form.Control as='textarea' rows='2' placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
+                        <Form.Control as='textarea' rows='2' maxLength="4096" placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
                         <Form.File ref={fileUploadRef} style={{ display: 'none' }} onChange={(e) => handleFileChange(e,)} multiple/>
                         <div className='d-flex w-100 my-1'>
                             <ButtonGroup className='mr-1 w-100'>
@@ -173,13 +183,14 @@ const CreatePost = ({ show, onClose }) => {
                             <Button variant="primary" onClick={handleFileClick}><BsPaperclip /></Button>
                         </div>
                     </Form.Group>
+
                     <Carousel activeIndex={carouselIndex} onSelect={handleCarouselSelect} className="bg-dark" interval={null} indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
                         {attachments.map((attachment, index) => (
                             <Carousel.Item key={attachment.key}>
                                 <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
                                     <Button style={{position:'absolute', top:'0px'}} size='md' className='p-1 m-3' variant="danger" onClick={() => handleDelete(attachment.key)}><BsFillXSquareFill className='mr-2'/>Remove</Button>
-                                    {attachment.type.startsWith('image/') && <img src={attachment.preview} style={{maxHeight:'275px'}}className="img-fluid mx-auto d-block" />}
-                                    {attachment.type == 'url' && <div style={{minHeight:'125px', maxHeight:'250px'}} ><LinkPreview attachment={attachment}/></div>}
+                                    {(attachment.type.startsWith('image/') || attachment.type == 'image') && <img src={attachment.objectUrl} style={{maxHeight:'275px'}}className="img-fluid mx-auto d-block" />}
+                                    {attachment.type == 'url' && <div style={{minHeight:'125px', maxHeight:'250px'}} ><LinkPreview attachment={attachment} disableLink={true}/></div>}
                                 </div>
                             </Carousel.Item>
                         ))}
@@ -187,9 +198,11 @@ const CreatePost = ({ show, onClose }) => {
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <Form.Check type='radio' inline label='Public' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
-                    <Form.Check type='radio' inline label='Private' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/>
-                    <Button variant="primary" disabled={!postEnabled} className="ml-3" type="submit" onClick={handleSubmit}>Post</Button>
+                    {!postSoul && 
+                        <><Form.Check type='radio' inline label='Public' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
+                        <Form.Check type='radio' inline label='Private' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/></>
+                    }
+                    <Button variant="primary" disabled={!postEnabled} className="ml-3" type="submit" onClick={handleSubmit}>{postSoul ? 'Update' : 'Post'}</Button>
                 </Modal.Footer>
             </Modal>
         </>

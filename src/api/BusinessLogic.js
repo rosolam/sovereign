@@ -6,6 +6,7 @@ import IpfsProviderPinata from './IpfsProviders/IpfsProviderPinata'
 import PreviewProviderLinkPreview from './PreviewProviders/PreviewProviderLinkPreview'
 import PreviewProviderNone from './PreviewProviders/PreviewProviderNone'
 import crypto from 'crypto'
+import { BsChevronCompactLeft } from 'react-icons/bs'
 
 class BusinessLogic {
     
@@ -306,6 +307,11 @@ class BusinessLogic {
 
     manageArrayState(prevState, value, key, sortBy){
 
+        //force empty objects to null because empty objects evaluate to true and we want to see these as deletes
+        if(value && Object.keys(value).length === 0){
+            value = null;
+        }
+
         //check to see if item exists already
         const existingIndex = prevState.findIndex(p => p.key === key)
         //console.log('existing index', existingIndex)
@@ -550,66 +556,120 @@ class BusinessLogic {
 
     }
 
-    async createPost(post, attachments, encrypt){
+    async updatePost(postSoul, post, encryptionKey, toggleEncrypt){
+         
+        //update modified date
+        this.gun.get(postSoul).get('modified').put(new Date().getTime())
+
+        //update post text
+        this.gun.get(postSoul).get('text').put(await this.encryptOrNot(post.text,encryptionKey))
+
+        //get list of attachment keys
+        const postAttachments = await this.gun.get(postSoul).get('attachments').then()
+
+        //remove deleted attachments
+        for(const attachmentKey in postAttachments){
+
+            //ignore Gun property and keys that are already nulled out
+            if(attachmentKey=='_' || !postAttachments[attachmentKey]) {continue}
+            
+            //is this attachment key missing in the new list of attachments?
+            if(!post.attachments.find((attachment) => {return attachment.key==attachmentKey})){
+                //delete it
+                this.gun.get(postSoul).get('attachments').get(attachmentKey).put(null) 
+            }
+        }
+
+        //add new attachments
+        for(const attachment of post.attachments){
+            //does this attachment key already exist?
+            if(!postAttachments[attachment.key]){
+                //add it
+                this.addAttachmentToPost(postSoul, attachment, encryptionKey)
+            }
+        }
+        
+        //toggle encryption?
+        if(toggleEncrypt){
+
+            if(encryptionKey){
+                //private -> public
+            }else {
+                //public -> private
+            }
+
+        }
+        
+
+    }
+
+    async createPost(post, encrypt){
 
         //create new post
-        const encryptionKey = encrypt ? crypto.randomBytes(32).toString('hex') : '' //32 bytes = 256 bit
+        const encryptKey = encrypt ? crypto.randomBytes(32).toString('hex') : '' //32 bytes = 256 bit
         const created = new Date().getTime()
         const key = created + this.mySoul
         this.gunAppRoot.get('posts').get(encrypt ? 'private' : 'public').get(key).put({
-            text: await this.encryptOrNot(post.text, encryptionKey),
+            text: await this.encryptOrNot(post.text, encryptKey),
             created: created,
             modified: created,
             key: key
         }).once(async (data) => {
-            
-            
+                        
             //get the post and add ref to profile as last post
-            const postRef = this.gunAppRoot.get('posts').get(encrypt ? 'private' : 'public').get(key)
+            const postSoul = Gun.node.soul(data)
+            const postRef = this.gun.get(postSoul)
             this.gunAppRoot.get('profile').get('lastPost').put(postRef)
             if(!encrypt){this.gunAppRoot.get('profile').get('lastPublicPost').put(postRef)}
 
             //add decryption keys if encrypted
             if(encrypt){
-                this.createPostTrust(data['_']['#'], encryptionKey)
+                this.createPostTrust(postSoul, encryptKey)
             }
             
-            //add attachments
-            if(attachments && attachments.length){
-                attachments.forEach(async attachment => {
+            //add all attachments
+            if(post.attachments && post.attachments.length){
+                post.attachments.forEach(async attachment => {
 
-                    //what type of attachment?
-                    let attachmentNode = {}
-                    if(attachment.type == 'url'){
-                        attachmentNode = {
-                            key: attachment.key,
-                            type: 'url',
-                            url: await this.encryptOrNot(attachment.url, encryptionKey),
-                            title: await this.encryptOrNot(attachment.title, encryptionKey),
-                            description: await this.encryptOrNot(attachment.description, encryptionKey),
-                            image: await this.encryptOrNot(attachment.image, encryptionKey)
-                        }
-                    }else if(attachment.type.startsWith('image')){
-                        attachmentNode = {
-                            key: attachment.key,
-                            type: 'image',
-                            ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
-                        }
-                    }else {
-                        attachmentNode = {
-                            key: attachment.key,
-                            type: 'file',
-                            ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
-                        }
-                    }
-                    
-                    //add it to the attachments node
-                    postRef.get('attachments').get(attachmentNode.key).put(attachmentNode)
+                    //add attachment
+                    this.addAttachmentToPost(postSoul, attachment, encryptKey)
 
                 });
             }
 
         })
+
+    }
+
+    async addAttachmentToPost(postSoul, attachment, encryptKey){
+
+      //what type of attachment?
+      let attachmentNode = {}
+      if(attachment.type == 'url'){
+          attachmentNode = {
+              key: attachment.key,
+              type: 'url',
+              url: await this.encryptOrNot(attachment.url, encryptKey),
+              title: await this.encryptOrNot(attachment.title, encryptKey),
+              description: await this.encryptOrNot(attachment.description, encryptKey),
+              image: await this.encryptOrNot(attachment.image, encryptKey)
+          }
+      }else if(attachment.type.startsWith('image')){
+          attachmentNode = {
+              key: attachment.key,
+              type: 'image',
+              ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
+          }
+      }else {
+          attachmentNode = {
+              key: attachment.key,
+              type: 'file',
+              ipfsHash: await this.ipfsProvider.putFile(attachment) //todo: encrypt file
+          }
+      }
+      
+      //add it to the attachments node
+      this.gun.get(postSoul).get('attachments').get(attachmentNode.key).put(attachmentNode)
 
     }
 
@@ -930,9 +990,17 @@ class BusinessLogic {
                 if(!unSubs.includes(_ev)){unSubs.push(_ev)}
                 if(once){_ev.off()}
             
+                //tombstone?
+                if(!value){
+                   setAttachments(prevState => this.manageArrayState(prevState, value, key, 'key'))
+                   return
+                }
+
                 //copy attachment
                 const attachment = {...value}
                 
+                console.log('attachment', postSoul,value, attachment)
+
                 //handle types of attachment
                 switch (attachment.type) {
                     case 'url':
@@ -943,7 +1011,7 @@ class BusinessLogic {
                         break;
                 
                     case 'image':
-                        attachment.url = await this.getFileFromIpfs(attachment.ipfsHash)
+                        attachment.objectUrl = await this.getFileFromIpfs(attachment.ipfsHash)
                         break;
 
                     case 'file':

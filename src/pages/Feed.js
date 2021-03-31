@@ -59,7 +59,9 @@ const ProfileFeed = () => {
                         </div>
                       </div>
                     );
-                }
+                },
+                closeOnEscape: true,
+                closeOnClickOutside: true
             })
 
             //ensure we dont get this prompt again
