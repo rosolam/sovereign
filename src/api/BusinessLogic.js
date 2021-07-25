@@ -162,7 +162,7 @@ class BusinessLogic {
         //create
         this.gunUser.create(user, password, (ack) => {
 
-            //cache the new user data to create during the login auth even because we can't write to the user node at this point yet
+            //cache the new user data to create during the login auth event because we can't write to the user node at this point yet
             this.#newUser = {name: name}
 
             //call to log them in

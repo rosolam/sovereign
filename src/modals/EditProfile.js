@@ -39,6 +39,12 @@ const EditProfile = ({ show, onClose }) => {
     const handleFileChange = (e) => {
 
         console.log('change',e)
+
+        if(e.target.files.length == 0 ){
+            //cancelled upload, just exit
+            return;
+        }
+
         // Make sure to revoke the data uris to avoid memory leaks
         if(profilePic){
             URL.revokeObjectURL(profilePic);
@@ -84,7 +90,7 @@ const EditProfile = ({ show, onClose }) => {
                         <div className='d-flex'>
                                 <ProfilePic src={profilePic} size='75px'/>
                                 {apiContext.businessLogic.ipfsProvider.canPut && 
-                                    <Button variant="primary" className='m-3' onClick={() => {fileUploadRef.current.click();}}><BsPersonSquare/> Upload</Button>
+                                    <Button variant="primary" className='m-3' onClick={() => {fileUploadRef.current.click();}}><BsPersonSquare/> Choose Picture</Button>
                                 }
                                 {!apiContext.businessLogic.ipfsProvider.canPut && 
                                     <div className='mx-4'>

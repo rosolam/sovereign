@@ -4,6 +4,7 @@ import ApiContext from '../api/ApiContext'
 import { BsLink45Deg, BsImages, BsPaperclip, BsFillXSquareFill} from "react-icons/bs"
 import LinkPreview from '../components/LinkPreview'
 import crypto from 'crypto'
+import { Link } from 'react-router-dom';
 
 const CreatePost = ({ show, onClose, postSoul, postText, postAttachments, postEncryptionKey}) => {
 
@@ -173,18 +174,18 @@ const CreatePost = ({ show, onClose, postSoul, postText, postAttachments, postEn
 
                     <Form.Group>
                         <Form.Control as='textarea' rows='2' maxLength="4096" placeholder="your post..." value={text} onChange={(e) => setText(e.target.value)} />
+                        
                         <Form.File ref={fileUploadRef} style={{ display: 'none' }} onChange={(e) => handleFileChange(e,)} multiple/>
                         <div className='d-flex w-100 my-1'>
                             <ButtonGroup className='mr-1 w-100'>
                                 <Form.Control type='text' placeholder="https://www.link.here" value={url} onChange={(e) => setUrl(e.target.value)} />
                                 <Button variant="primary" disabled={!urlIsValid} onClick={handleUrlAdd}><BsLink45Deg /></Button>
                             </ButtonGroup>
-                            <Button variant="primary" className='mr-1' onClick={handlePictureClick}><BsImages /></Button>
-                            <Button variant="primary" onClick={handleFileClick}><BsPaperclip /></Button>
+                            <Button variant="primary" className='mr-1' disabled={!apiContext.businessLogic.ipfsProvider.canPut} onClick={handlePictureClick}><BsImages /></Button>
+                            <Button variant="primary" disabled={!apiContext.businessLogic.ipfsProvider.canPut} onClick={handleFileClick}><BsPaperclip /></Button>
                         </div>
                     </Form.Group>
-
-                    <Carousel activeIndex={carouselIndex} onSelect={handleCarouselSelect} className="bg-dark" interval={null} indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
+                     <Carousel activeIndex={carouselIndex} onSelect={handleCarouselSelect} className="bg-dark" interval={null} indicators={attachments.length > 1 ? true : false} controls={attachments.length > 1 ? true : false}>
                         {attachments.map((attachment, index) => (
                             <Carousel.Item key={attachment.key}>
                                 <div style={{minHeight:'275px'}} className="d-flex p-2 justify-content-center align-items-center">
@@ -196,12 +197,19 @@ const CreatePost = ({ show, onClose, postSoul, postText, postAttachments, postEn
                         ))}
                     </Carousel>
 
+                    {!postSoul && 
+                        <><Form.Check type='radio' inline label='Public Post' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
+                        <Form.Check type='radio' inline label='Private Post' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/></>
+                    }
+
+                    {!apiContext.businessLogic.ipfsProvider.canPut && 
+                        <><div className='mx-1 mt-3 small'>
+                            Note: You are unable to upload pictures at this time.  Please setup an IPFS service in Settings to enable distributed file sharing.
+                        </div></>
+                    }
                 </Modal.Body>
                 <Modal.Footer>
-                    {!postSoul && 
-                        <><Form.Check type='radio' inline label='Public' checked={isPublic} onChange={() => setIsPublic(!isPublic)}/>
-                        <Form.Check type='radio' inline label='Private' checked={!isPublic} onChange={() => setIsPublic(!isPublic)}/></>
-                    }
+                    {!apiContext.businessLogic.ipfsProvider.canPut &&  <Button variant="warning" as={Link} to="/settings/upload">Setup IPFS Now</Button>}
                     <Button variant="primary" disabled={!postEnabled} className="ml-3" type="submit" onClick={handleSubmit}>{postSoul ? 'Update' : 'Post'}</Button>
                 </Modal.Footer>
             </Modal>

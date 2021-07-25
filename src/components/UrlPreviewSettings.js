@@ -2,6 +2,7 @@ import React from 'react'
 import { Button, Form, Tabs, Tab, Spinner } from 'react-bootstrap'
 import { useState, useEffect, useContext} from 'react'
 import ApiContext from '../api/ApiContext'
+import { Link} from 'react-router-dom';
 
 const UrlPreviewSettings = () => {
 
@@ -45,12 +46,12 @@ const UrlPreviewSettings = () => {
                     <Tab eventKey="LinkPreview" title="Link Preview Keys" className="border border-top-0 p-3">
                         <Form.Group controlId="formLinkPreviewKey">
                             <Form.Label>API Key</Form.Label>
-                            <Form.Control type="text" placeholder="a3kfowe9023mdopwqcv923msadl32r3f" value={apiKey} onChange={(e) => setApiKey(e.target.value)}/>
+                            <Form.Control type="text" placeholder="a3kfowe9023mdopqqcv923msadl32r3f" value={apiKey} onChange={(e) => setApiKey(e.target.value)}/>
                         </Form.Group>
                         
                         {apiStatus == 'ok' && <>
                             <div className='d-flex justify-content-center'><p>Test Successful! Enjoy link previews :)</p></div>
-                            <Button variant="primary" type="submit" className='m-1 d-block w-100' >Close</Button>
+                            <Button variant="primary" as={Link} to="/following" type="submit" className='m-1 d-block w-100' >Home</Button>
                         </>}
                         {apiStatus == 'bad' && <div className='d-flex justify-content-center'><p>Test Failed, double check your API key</p></div>}
 
