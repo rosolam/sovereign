@@ -20,7 +20,7 @@ const FollowUser = ({show, onClose}) => {
 
         //follow user
         const soul = soulAddress.substr(soulAddress.indexOf('~')).trim()
-        apiContext.businessLogic.followUser(soul)
+        apiContext.businessLogic.followUser(soul,true)
 
         //close
         onClose()
